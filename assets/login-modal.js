@@ -18,6 +18,8 @@
   const formLogin = document.getElementById("form-login");
   const formRegister = document.getElementById("form-register");
   const forms = [formLogin, formRegister].filter(Boolean);
+  const tabs = overlay.querySelector(".login-tabs");
+  const lead = overlay.querySelector(".login-sheet__lead");
 
   let csrf = overlay.querySelector('input[name="_csrf"]')?.value || "";
   let adminUrl = "/admin/";
@@ -30,8 +32,7 @@
       el = document.createElement("div");
       el.setAttribute("data-auth-feedback", "1");
       el.hidden = true;
-      const tabs = overlay.querySelector(".login-tabs");
-      (tabs || overlay.querySelector(".login-sheet__lead"))?.after(el);
+      (tabs || lead)?.after(el);
     }
     return el;
   }
@@ -44,10 +45,24 @@
     el.textContent = message || "";
   }
 
-  function showStaticHint(show) {
-    if (!hint) return;
-    hint.hidden = !show;
-    hint.classList.toggle("is-alert", show);
+  function setStaticMode(on) {
+    if (hint) {
+      hint.hidden = !on;
+      hint.classList.toggle("is-alert", on);
+    }
+    if (tabs) tabs.hidden = on;
+    forms.forEach((form) => {
+      form.hidden = on;
+      form.querySelectorAll("input,button,select").forEach((el) => {
+        if (el.classList.contains("login-sheet__link")) return;
+        el.disabled = on;
+      });
+    });
+    if (lead) {
+      lead.textContent = on
+        ? "Na Vercel só a landing e o chat ficam online. O login do painel roda no Node local."
+        : "Entre com sua conta ou crie um acesso para o painel administrativo.";
+    }
   }
 
   function setCsrf(token) {
@@ -92,6 +107,12 @@
     if (booting) return booting;
     booting = (async () => {
       try {
+        if (window.VerticeAPI?.isStaticHost?.()) {
+          setStaticMode(true);
+          showFeedback("");
+          backendReady = false;
+          return false;
+        }
         if (!window.VerticeAPI) {
           throw new Error("Cliente de API não carregado");
         }
@@ -119,7 +140,8 @@
           adminUrl = `${base}/admin/`;
         }
         backendReady = true;
-        showStaticHint(false);
+        setStaticMode(false);
+        showFeedback("");
         if (data.user) {
           showFeedback(`Olá, ${data.user.name}. Redirecionando…`, "success");
           window.setTimeout(() => {
@@ -129,9 +151,9 @@
         return true;
       } catch (err) {
         backendReady = false;
-        showStaticHint(true);
+        setStaticMode(true);
         showFeedback(
-          "Backend offline. Rode: npm run seed && npm run dev (porta 3100)",
+          "Backend offline. No PC rode npm run dev e abra http://127.0.0.1:3100/",
           "error"
         );
         return false;
@@ -186,6 +208,11 @@
     event.preventDefault();
     event.stopPropagation();
     showFeedback("");
+
+    if (window.VerticeAPI?.isStaticHost?.()) {
+      setStaticMode(true);
+      return;
+    }
 
     const ready = backendReady || (await bootBackend());
     if (!ready || !csrf) {
@@ -244,7 +271,7 @@
         "Falha ao falar com o Node.js. Use: npm run dev (porta 3100)",
         "error"
       );
-      showStaticHint(true);
+      setStaticMode(true);
     } finally {
       if (submitBtn) submitBtn.disabled = false;
     }

@@ -7,29 +7,49 @@
     return String(value).trim().replace(/\/+$/, "");
   }
 
+  function isLocalHost(hostname) {
+    return hostname === "127.0.0.1" || hostname === "localhost" || hostname === "[::1]";
+  }
+
+  function isStaticHost() {
+    const host = window.location.hostname || "";
+    return /vercel\.app$/i.test(host) || /github\.io$/i.test(host);
+  }
+
   function candidateBases() {
     const params = new URLSearchParams(window.location.search);
     const list = [];
     const fromQuery = normalizeBase(params.get("api"));
     const fromWindow = normalizeBase(window.VERTICE_API_BASE || "");
     const fromStorage = normalizeBase(localStorage.getItem(STORAGE_KEY) || "");
-    const sameOrigin = "";
+    const pageIsHttps = window.location.protocol === "https:";
 
     if (fromQuery) list.push(fromQuery);
     if (fromWindow) list.push(fromWindow);
     if (fromStorage) list.push(fromStorage);
-    list.push(sameOrigin);
+
+    // Mesma origem (npm run dev / servidor Node).
+    list.push("");
 
     const host = window.location.hostname;
     const port = window.location.port;
-    const isLocal = host === "127.0.0.1" || host === "localhost";
-    if (isLocal && port !== "3100") {
+    const local = isLocalHost(host);
+
+    // Só tenta http://127.0.0.1:3100 se a página também for http local
+    // (HTTPS na Vercel bloqueia mixed content).
+    if (!pageIsHttps && local && port !== "3100") {
       list.push(DEFAULT_LOCAL);
     }
-    // Último recurso em ambiente local.
-    if (isLocal) list.push(DEFAULT_LOCAL);
+    if (!pageIsHttps && local) {
+      list.push(DEFAULT_LOCAL);
+    }
 
-    return [...new Set(list)];
+    // Filtra bases http quando a página é https.
+    return [...new Set(list)].filter((base) => {
+      if (!base) return true;
+      if (pageIsHttps && base.startsWith("http://")) return false;
+      return true;
+    });
   }
 
   async function probe(base) {
@@ -97,5 +117,7 @@
     ensureApi,
     apiFetch,
     getBase: () => window.VERTICE_API_BASE || "",
+    isStaticHost,
+    localUrl: DEFAULT_LOCAL,
   };
 })();
