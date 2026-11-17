@@ -3,7 +3,6 @@
   const composer = document.getElementById("composer");
   const input = document.getElementById("user-input");
   const statusText = document.getElementById("status-text");
-  const API_URL = "/api/chat";
 
   let optionsLocked = false;
   let busy = false;
@@ -127,13 +126,15 @@
   }
 
   async function apiCall(payload) {
-    const res = await fetch(API_URL, {
+    if (!window.VerticeAPI) {
+      throw new Error("Cliente de API não carregado");
+    }
+    const res = await window.VerticeAPI.apiFetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-      credentials: "same-origin",
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       throw new Error(data.error || "Falha na API");
     }

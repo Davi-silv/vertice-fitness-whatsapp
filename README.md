@@ -40,8 +40,20 @@ Abra: **http://127.0.0.1:3100/**
 - Front: HTML/CSS/JS (landing + admin SPA)
 - Sem PHP — stack 100% JavaScript/Node.js
 
+## Front ↔ Node.js
+
+O front usa `assets/api-client.js`, que:
+
+1. Testa `/api/health` na origem atual
+2. Se falhar (outra porta), tenta `http://127.0.0.1:3100`
+3. Liga chat (`/api/chat`) e login (`/api/auth`) ao Express
+
+Abra sempre pelo Node: **http://127.0.0.1:3100/**  
+(ou `?api=http://127.0.0.1:3100` se o HTML estiver em outra porta)
+
 ## API principal
 
+- `GET /api/health` — status do backend
 - `GET/POST /api/auth` — sessão, login, registro, logout
 - `POST /api/chat` — concierge WhatsApp
 - `GET/POST /api/admin/*` — dashboard, alunos, planos, check-in, agenda, financeiro, professores

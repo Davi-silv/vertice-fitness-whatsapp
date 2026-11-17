@@ -196,7 +196,18 @@
     </section>
   </div>
 
+  <script src="assets/api-client.js"></script>
   <script src="assets/app.js"></script>
   <script src="assets/login-modal.js"></script>
+  <script>
+    // Conecta o front ao Node assim que a página carrega.
+    window.VerticeAPI?.ensureApi()
+      .then(({ base }) => {
+        console.info("[Vértice] API Node conectada:", base || window.location.origin);
+      })
+      .catch(() => {
+        console.warn("[Vértice] API offline — rode npm run dev na porta 3100");
+      });
+  </script>
 </body>
 </html>

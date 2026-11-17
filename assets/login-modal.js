@@ -2,7 +2,7 @@
   const overlay = document.getElementById("login-panel");
   if (!overlay) return;
 
-  const AUTH_URL = "/api/auth";
+  const AUTH_PATH = "/api/auth";
   const openers = [
     document.getElementById("open-login"),
     document.getElementById("open-login-cta"),
@@ -92,9 +92,12 @@
     if (booting) return booting;
     booting = (async () => {
       try {
-        const res = await fetch(AUTH_URL, {
+        if (!window.VerticeAPI) {
+          throw new Error("Cliente de API não carregado");
+        }
+        await window.VerticeAPI.ensureApi();
+        const res = await window.VerticeAPI.apiFetch(AUTH_PATH, {
           method: "GET",
-          credentials: "same-origin",
           headers: { Accept: "application/json" },
         });
         const type = res.headers.get("content-type") || "";
@@ -107,13 +110,20 @@
         }
         setCsrf(data.csrf);
         fillUnits(data.units || []);
-        if (data.adminUrl) adminUrl = data.adminUrl;
+        const base = window.VerticeAPI.getBase();
+        if (data.adminUrl) {
+          adminUrl = data.adminUrl.startsWith("http")
+            ? data.adminUrl
+            : `${base}${data.adminUrl}`;
+        } else {
+          adminUrl = `${base}/admin/`;
+        }
         backendReady = true;
         showStaticHint(false);
         if (data.user) {
           showFeedback(`Olá, ${data.user.name}. Redirecionando…`, "success");
           window.setTimeout(() => {
-            window.location.href = data.adminUrl || adminUrl;
+            window.location.href = adminUrl;
           }, 400);
         }
         return true;
@@ -121,7 +131,7 @@
         backendReady = false;
         showStaticHint(true);
         showFeedback(
-          "Backend offline. Rode: npm run seed && npm run dev",
+          "Backend offline. Rode: npm run seed && npm run dev (porta 3100)",
           "error"
         );
         return false;
@@ -201,9 +211,8 @@
     if (submitBtn) submitBtn.disabled = true;
 
     try {
-      const res = await fetch(AUTH_URL, {
+      const res = await window.VerticeAPI.apiFetch(AUTH_PATH, {
         method: "POST",
-        credentials: "same-origin",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
@@ -225,7 +234,11 @@
         return;
       }
       showFeedback(data.message || "Login ok. Abrindo painel…", "success");
-      window.location.href = data.redirect || adminUrl;
+      const base = window.VerticeAPI.getBase();
+      const redirect = data.redirect || "/admin/";
+      window.location.href = redirect.startsWith("http")
+        ? redirect
+        : `${base}${redirect}`;
     } catch (err) {
       showFeedback(
         "Falha ao falar com o Node.js. Use: npm run dev (porta 3100)",
