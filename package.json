@@ -12,7 +12,7 @@
     "dev:php": "php -S 0.0.0.0:8080 router.php"
   },
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -20,7 +20,6 @@
     "cookie-parser": "^1.4.7",
     "express": "^4.21.2",
     "express-session": "^1.18.1"
-  },
-  "optionalDependencies": {}
+  }
 }
 
