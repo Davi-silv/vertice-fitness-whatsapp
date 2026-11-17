@@ -21,6 +21,12 @@ router.get("/me", (req, res) => {
 router.get("/dashboard", requirePerm("dashboard.read"), (req, res) => {
   const members = db.prepare("SELECT COUNT(*) AS c FROM members WHERE status = 'active'").get().c;
   const openInvoices = db.prepare("SELECT COUNT(*) AS c FROM invoices WHERE status = 'open'").get().c;
+  const overdueInvoices = db
+    .prepare(
+      `SELECT COUNT(*) AS c FROM invoices
+       WHERE status = 'open' AND due_date < date('now')`
+    )
+    .get().c;
   const revenue = db
     .prepare(
       `SELECT COALESCE(SUM(amount_cents),0) AS s FROM payments
@@ -29,6 +35,12 @@ router.get("/dashboard", requirePerm("dashboard.read"), (req, res) => {
     .get().s;
   const checkinsToday = db
     .prepare("SELECT COUNT(*) AS c FROM checkins WHERE date(checked_in_at) = date('now')")
+    .get().c;
+  const sessionsToday = db
+    .prepare(
+      `SELECT COUNT(*) AS c FROM class_sessions
+       WHERE date(starts_at) = date('now')`
+    )
     .get().c;
   const recentMembers = db
     .prepare(
@@ -39,9 +51,22 @@ router.get("/dashboard", requirePerm("dashboard.read"), (req, res) => {
     .all();
   const openList = db
     .prepare(
-      `SELECT i.id, i.description, i.amount_cents, i.due_date, m.name AS member_name
+      `SELECT i.id, i.description, i.amount_cents, i.due_date, m.name AS member_name,
+              CASE WHEN i.due_date < date('now') THEN 1 ELSE 0 END AS overdue
        FROM invoices i INNER JOIN members m ON m.id = i.member_id
        WHERE i.status = 'open' ORDER BY i.due_date LIMIT 8`
+    )
+    .all();
+  const todaySessions = db
+    .prepare(
+      `SELECT cs.id, cs.starts_at, c.capacity,
+              c.name AS class_name, t.name AS teacher_name,
+              (SELECT COUNT(*) FROM class_bookings b WHERE b.session_id = cs.id AND b.status = 'booked') AS booked
+       FROM class_sessions cs
+       INNER JOIN classes c ON c.id = cs.class_id
+       LEFT JOIN teachers t ON t.id = c.teacher_id
+       WHERE date(cs.starts_at) = date('now')
+       ORDER BY cs.starts_at LIMIT 6`
     )
     .all();
 
@@ -50,12 +75,19 @@ router.get("/dashboard", requirePerm("dashboard.read"), (req, res) => {
     kpis: {
       members,
       openInvoices,
+      overdueInvoices,
       revenueCents: revenue,
       revenue: moneyBr(revenue),
       checkinsToday,
+      sessionsToday,
     },
     recentMembers,
-    openInvoicesList: openList.map((i) => ({ ...i, amount: moneyBr(i.amount_cents) })),
+    openInvoicesList: openList.map((i) => ({
+      ...i,
+      overdue: Boolean(i.overdue),
+      amount: moneyBr(i.amount_cents),
+    })),
+    todaySessions,
   });
 });
 
