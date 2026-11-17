@@ -227,7 +227,7 @@ if (!function_exists('admin_url')) {
 
           <div class="chat-body" id="chat-body" role="log" aria-live="polite" aria-relevant="additions"></div>
 
-          <form class="chat-composer" id="composer" autocomplete="off">
+          <form class="chat-composer" id="composer" autocomplete="off" action="javascript:void(0)" onsubmit="return false">
             <label class="sr-only" for="user-input">Mensagem</label>
             <input
               id="user-input"

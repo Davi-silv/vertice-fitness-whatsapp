@@ -29,8 +29,8 @@
   function showStaticHint() {
     if (!hint) return;
     hint.hidden = false;
-    hint.scrollIntoView({ behavior: "smooth", block: "nearest" });
     hint.classList.add("is-alert");
+    hint.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   function focusActiveForm() {
@@ -63,8 +63,10 @@
     overlay.setAttribute("aria-hidden", "false");
     document.body.classList.add("login-open");
     if (isStaticAuthHost()) showStaticHint();
-    if (tab) setTab(tab);
-    else setTab(overlay.dataset.tab || "login");
+    if (tabButtons.length) {
+      if (tab) setTab(tab);
+      else setTab(overlay.dataset.tab || "login");
+    }
   }
 
   function closeLogin() {
@@ -79,12 +81,15 @@
     btn.addEventListener("click", () => setTab(btn.getAttribute("data-auth-tab") || "login"));
   });
 
+  // Nunca deixa formulário de auth navegar em host estático (evita HTTP 405).
   forms.forEach((form) => {
+    form.setAttribute("action", "javascript:void(0)");
     form.addEventListener("submit", (event) => {
       if (!isStaticAuthHost()) return;
       event.preventDefault();
       event.stopPropagation();
       showStaticHint();
+      window.location.href = "gestao-local.html";
     });
   });
 
@@ -96,9 +101,10 @@
 
   if (isStaticAuthHost() && hint) {
     hint.hidden = false;
+    hint.classList.add("is-alert");
   }
 
-  if (overlay.classList.contains("is-open")) {
+  if (overlay.classList.contains("is-open") && tabButtons.length) {
     setTab(overlay.dataset.tab || "login");
   }
 })();

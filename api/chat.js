@@ -360,6 +360,13 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method !== "POST") {
+    // Evita tela "HTTP ERROR 405" se alguém abrir /api/chat no navegador.
+    if (req.method === "GET" || req.method === "HEAD") {
+      res.statusCode = 302;
+      res.setHeader("Location", "/");
+      res.end();
+      return;
+    }
     return json(res, 405, { error: "Método não permitido" });
   }
 
