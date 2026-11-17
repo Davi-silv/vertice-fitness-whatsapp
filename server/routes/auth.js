@@ -12,7 +12,6 @@ router.get("/", (req, res) => {
     .all();
   res.json({
     ok: true,
-    php: false,
     node: true,
     csrf: req.session.id || "node",
     units,

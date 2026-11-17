@@ -3,7 +3,6 @@
   const composer = document.getElementById("composer");
   const input = document.getElementById("user-input");
   const statusText = document.getElementById("status-text");
-  // Node.js e Vercel: /api/chat | fallback PHP legado: api.php
   const API_URL = "/api/chat";
 
   let optionsLocked = false;

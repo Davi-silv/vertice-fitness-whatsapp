@@ -1,6 +1,6 @@
 /**
  * Concierge Vértice Fitness — serverless (Vercel).
- * Espelha a lógica de api.php; estado guardado em cookie HttpOnly.
+ * Concierge serverless (Vercel). Estado em cookie HttpOnly.
  */
 
 const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER || "5522999315667";

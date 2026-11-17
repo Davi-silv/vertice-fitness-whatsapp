@@ -14,7 +14,7 @@
   const tabButtons = overlay.querySelectorAll("[data-auth-tab]");
   const panels = overlay.querySelectorAll("[data-auth-panel]");
   const title = document.getElementById("login-title");
-  const hint = document.getElementById("php-auth-hint");
+  const hint = document.getElementById("auth-hint");
   const formLogin = document.getElementById("form-login");
   const formRegister = document.getElementById("form-register");
   const forms = [formLogin, formRegister].filter(Boolean);
@@ -99,11 +99,11 @@
         });
         const type = res.headers.get("content-type") || "";
         if (!res.ok || !type.includes("application/json")) {
-          throw new Error("Backend PHP indisponível");
+          throw new Error("Backend Node.js indisponível");
         }
         const data = await res.json();
         if (!data?.ok || !data.csrf) {
-          throw new Error(data?.error || "Backend PHP indisponível");
+          throw new Error(data?.error || "Backend Node.js indisponível");
         }
         setCsrf(data.csrf);
         fillUnits(data.units || []);
@@ -179,7 +179,7 @@
 
     const ready = backendReady || (await bootBackend());
     if (!ready || !csrf) {
-      showFeedback("Backend PHP não encontrado nesta URL.", "error");
+      showFeedback("Backend Node.js não encontrado nesta URL.", "error");
       return;
     }
 
@@ -214,7 +214,7 @@
       const type = res.headers.get("content-type") || "";
       const data = type.includes("application/json") ? await res.json() : null;
       if (!data) {
-        throw new Error("Resposta inválida do backend PHP");
+        throw new Error("Resposta inválida do backend Node.js");
       }
       if (!res.ok || !data.ok) {
         showFeedback(data.error || "Não foi possível autenticar.", "error");

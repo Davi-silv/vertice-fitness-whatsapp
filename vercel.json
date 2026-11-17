@@ -9,15 +9,12 @@
   "redirects": [
     { "source": "/admin", "destination": "/gestao-local.html", "permanent": false },
     { "source": "/admin/(.*)", "destination": "/gestao-local.html", "permanent": false },
-    { "source": "/index.php", "destination": "/", "permanent": false },
     { "source": "/login", "destination": "/gestao-local.html", "permanent": false },
     { "source": "/api/auth", "destination": "/gestao-local.html", "permanent": false },
-    { "source": "/api/auth.php", "destination": "/gestao-local.html", "permanent": false },
     { "source": "/api/admin/(.*)", "destination": "/gestao-local.html", "permanent": false }
   ],
   "rewrites": [
-    { "source": "/", "destination": "/index.html" },
-    { "source": "/api.php", "destination": "/api/chat" }
+    { "source": "/", "destination": "/index.html" }
   ],
   "headers": [
     {

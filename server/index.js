@@ -29,11 +29,7 @@ app.use(
 );
 
 app.use("/api/auth", authRoutes);
-app.use("/api/auth.php", authRoutes);
-
 app.post("/api/chat", chatHandler);
-app.post("/api.php", chatHandler);
-
 app.use("/api/admin", adminRoutes);
 
 app.get("/api/health", (_req, res) => {
@@ -44,7 +40,6 @@ app.use("/assets", express.static(path.join(ROOT, "assets")));
 app.use(
   "/admin",
   (req, res, next) => {
-    // Libera CSS/JS estáticos; HTML do painel exige login.
     if (/\.(css|js|png|jpg|svg|ico|woff2?)$/i.test(req.path)) return next();
     if (!currentUser(req)) return res.redirect("/?login=1");
     next();
@@ -56,12 +51,17 @@ app.get("/", (_req, res) => {
   res.sendFile(path.join(ROOT, "index.html"));
 });
 
-// Atalho da URL antiga de demo.
-app.get(["/demos/vertice-fitness-whatsapp", "/demos/vertice-fitness-whatsapp/", "/demos/vertice-fitness-whatsapp/index.html"], (_req, res) => {
-  res.redirect(302, "/");
-});
+app.get(
+  [
+    "/demos/vertice-fitness-whatsapp",
+    "/demos/vertice-fitness-whatsapp/",
+    "/demos/vertice-fitness-whatsapp/index.html",
+  ],
+  (_req, res) => {
+    res.redirect(302, "/");
+  }
+);
 
-// Evita servir o admin PHP antigo pela pasta /admin do projeto.
 app.use(express.static(ROOT, { index: false, extensions: ["html"] }));
 
 const server = app.listen(PORT, "0.0.0.0", () => {

@@ -36,8 +36,9 @@ Abra: **http://127.0.0.1:3100/**
 
 ## Stack
 
-- Node.js 18+ · Express · express-session · better-sqlite3 · bcryptjs
+- Node.js 24 · Express · express-session · better-sqlite3 · bcryptjs
 - Front: HTML/CSS/JS (landing + admin SPA)
+- Sem PHP — stack 100% JavaScript/Node.js
 
 ## API principal
 

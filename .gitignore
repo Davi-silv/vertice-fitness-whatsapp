@@ -6,7 +6,7 @@ node_modules/
 .env.*
 !.env.example
 
-# Dados locais gerados pelo PHP
+# Dados locais (SQLite / uploads / sessões)
 data/leads.json
 data/vertice.db
 data/vertice.db-*
@@ -15,11 +15,9 @@ data/uploads/*
 data/sessions/*
 !data/sessions/.gitkeep
 !data/.gitkeep
-data/vertice.db
-data/vertice.db-*
-data/uploads/*
-!data/uploads/.gitkeep
-data/sessions/
+
+# Build Vercel local
+dist/
 
 # Sistema / IDE
 .DS_Store
@@ -32,7 +30,3 @@ Thumbs.db
 
 # Vercel
 .vercel/
-
-# PHP
-vendor/
-composer.lock
