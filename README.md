@@ -54,6 +54,7 @@ Abra:
 
 | Usuário | Senha | Cargo |
 |---------|-------|-------|
+| `teste@vertice.local` | `Teste@2026` | Administrador (conta de teste) |
 | `admin@vertice.local` | `Vertice@2026` | Administrador |
 | `financeiro@vertice.local` | `Vertice@2026` | Financeiro |
 | `recepcao@vertice.local` | `Vertice@2026` | Recepção |

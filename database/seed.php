@@ -97,6 +97,8 @@ $insUser = $pdo->prepare(
 );
 $insUser->execute([$unit1, $roleIds['admin'], 'Admin Vértice', 'admin@vertice.local', $pass]);
 $adminId = (int) $pdo->lastInsertId();
+$passTeste = password_hash('Teste@2026', PASSWORD_DEFAULT);
+$insUser->execute([$unit1, $roleIds['admin'], 'Usuário Teste', 'teste@vertice.local', $passTeste]);
 $insUser->execute([$unit1, $roleIds['financeiro'], 'Ana Financeiro', 'financeiro@vertice.local', $pass]);
 $insUser->execute([$unit1, $roleIds['recepcao'], 'Bruno Recepção', 'recepcao@vertice.local', $pass]);
 $insUser->execute([$unit1, $roleIds['professor'], 'Carla Professor', 'professor@vertice.local', $pass]);
@@ -212,5 +214,6 @@ $pdo->prepare('INSERT INTO settings (key, value) VALUES (?, ?)')->execute(['bloc
 $pdo->prepare('INSERT INTO settings (key, value) VALUES (?, ?)')->execute(['academy_name', 'Vértice Fitness']);
 
 echo "OK\n";
-echo "Login: admin@vertice.local / Vertice@2026\n";
+echo "Login admin: admin@vertice.local / Vertice@2026\n";
+echo "Login teste: teste@vertice.local / Teste@2026\n";
 echo "DB: " . DB_PATH . "\n";
