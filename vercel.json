@@ -3,13 +3,15 @@
   "version": 2,
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    { "source": "/admin", "destination": "/gestao-local.html", "permanent": false },
+    { "source": "/admin/:path*", "destination": "/gestao-local.html", "permanent": false },
+    { "source": "/index.php", "destination": "/", "permanent": false },
+    { "source": "/login", "destination": "/gestao-local.html", "permanent": false }
+  ],
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
-    { "source": "/api.php", "destination": "/api/chat" },
-    { "source": "/index.php", "destination": "/index.html" },
-    { "source": "/admin", "destination": "/gestao-local.html" },
-    { "source": "/admin/(.*)", "destination": "/gestao-local.html" },
-    { "source": "/login", "destination": "/gestao-local.html" }
+    { "source": "/api.php", "destination": "/api/chat" }
   ],
   "headers": [
     {
