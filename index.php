@@ -12,6 +12,10 @@ if (($_GET['err'] ?? '') === 'csrf') {
     $authError = 'Sessão expirada. Tente entrar de novo.';
     $openLogin = true;
 }
+if (isset($_GET['msg']) && is_string($_GET['msg']) && $_GET['msg'] !== '') {
+    $authError = substr($_GET['msg'], 0, 180);
+    $openLogin = true;
+}
 
 try {
     require_once __DIR__ . '/admin/includes/bootstrap.php';
@@ -281,15 +285,20 @@ if (!function_exists('admin_url')) {
         <div class="login-sheet__success"><?= e($authSuccess) ?></div>
       <?php endif; ?>
 
+      <div class="login-sheet__hint" id="php-auth-hint" hidden>
+        O login usa o backend PHP (<strong>api/auth.php</strong>).
+      </div>
+
       <form
         method="post"
-        action="index.php"
+        action="api/auth.php"
         class="login-sheet__form<?= $authTab === 'login' ? ' is-active' : '' ?>"
         id="form-login"
         data-auth-panel="login"
         autocomplete="on"
       >
         <?= csrf_field() ?>
+        <input type="hidden" name="action" value="login" />
         <input type="hidden" name="form" value="staff_login" />
         <label>
           E-mail
@@ -308,13 +317,14 @@ if (!function_exists('admin_url')) {
 
       <form
         method="post"
-        action="index.php"
+        action="api/auth.php"
         class="login-sheet__form<?= $authTab === 'register' ? ' is-active' : '' ?>"
         id="form-register"
         data-auth-panel="register"
         autocomplete="on"
       >
         <?= csrf_field() ?>
+        <input type="hidden" name="action" value="register" />
         <input type="hidden" name="form" value="staff_register" />
         <label>
           Nome completo

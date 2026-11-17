@@ -47,8 +47,10 @@ php -S 0.0.0.0:8080 router.php     # importante: use o router.php
 
 Abra:
 
-- http://127.0.0.1:8080/ — landing (Login + Criar conta)
+- http://127.0.0.1:8080/ — landing (Login + Criar conta via `api/auth.php`)
 - http://127.0.0.1:8080/admin/ — gestão
+
+O botão **Login** na landing chama o backend PHP (`GET/POST api/auth.php`), cria a sessão e redireciona ao painel. Na Vercel (estático) o chat funciona; o login administrativo exige este servidor PHP.
 
 ### Credenciais seed
 

@@ -2,6 +2,7 @@
   const overlay = document.getElementById("login-panel");
   if (!overlay) return;
 
+  const AUTH_URL = "api/auth.php";
   const openers = [
     document.getElementById("open-login"),
     document.getElementById("open-login-cta"),
@@ -14,27 +15,125 @@
   const panels = overlay.querySelectorAll("[data-auth-panel]");
   const title = document.getElementById("login-title");
   const hint = document.getElementById("php-auth-hint");
-  const forms = overlay.querySelectorAll("form.login-sheet__form");
+  const formLogin = document.getElementById("form-login");
+  const formRegister = document.getElementById("form-register");
+  const forms = [formLogin, formRegister].filter(Boolean);
 
-  /** Hosting estático (Vercel etc.) não executa PHP — POST gera HTTP 405. */
-  function isStaticAuthHost() {
-    const hasCsrf = Boolean(overlay.querySelector('input[name="_csrf"]'));
-    if (hasCsrf) return false;
-    const host = location.hostname || "";
-    if (/vercel\.app$/i.test(host) || /github\.io$/i.test(host)) return true;
-    if (!location.port && !/\.php$/i.test(location.pathname || "")) return true;
-    return !hasCsrf;
+  let csrf = overlay.querySelector('input[name="_csrf"]')?.value || "";
+  let adminUrl = "/admin/index.php";
+  let backendReady = Boolean(csrf);
+  let booting = null;
+
+  function ensureFeedback() {
+    let el = overlay.querySelector("[data-auth-feedback]");
+    if (!el) {
+      el = document.createElement("div");
+      el.setAttribute("data-auth-feedback", "1");
+      el.hidden = true;
+      const tabs = overlay.querySelector(".login-tabs");
+      (tabs || overlay.querySelector(".login-sheet__lead"))?.after(el);
+    }
+    return el;
   }
 
-  function showStaticHint() {
+  function showFeedback(message, type = "error") {
+    const el = ensureFeedback();
+    el.hidden = !message;
+    el.className =
+      type === "success" ? "login-sheet__success" : "login-sheet__error";
+    el.textContent = message || "";
+  }
+
+  function showStaticHint(show) {
     if (!hint) return;
-    hint.hidden = false;
-    hint.classList.add("is-alert");
-    hint.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    hint.hidden = !show;
+    hint.classList.toggle("is-alert", show);
+  }
+
+  function setCsrf(token) {
+    csrf = token || "";
+    overlay.querySelectorAll('input[name="_csrf"]').forEach((input) => {
+      input.value = csrf;
+    });
+    forms.forEach((form) => {
+      if (!form.querySelector('input[name="_csrf"]')) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "_csrf";
+        input.value = csrf;
+        form.prepend(input);
+      }
+    });
+  }
+
+  function fillUnits(units) {
+    if (!formRegister || !Array.isArray(units) || !units.length) return;
+    let select = formRegister.querySelector('select[name="unit_id"]');
+    if (!select) {
+      const label = document.createElement("label");
+      label.innerHTML = "Unidade";
+      select = document.createElement("select");
+      select.name = "unit_id";
+      select.required = true;
+      label.appendChild(select);
+      const emailLabel = formRegister.querySelector('input[name="email"]')?.closest("label");
+      emailLabel?.after(label);
+    }
+    select.innerHTML = "";
+    units.forEach((unit) => {
+      const opt = document.createElement("option");
+      opt.value = String(unit.id);
+      opt.textContent = unit.name;
+      select.appendChild(opt);
+    });
+  }
+
+  async function bootBackend() {
+    if (booting) return booting;
+    booting = (async () => {
+      try {
+        const res = await fetch(AUTH_URL, {
+          method: "GET",
+          credentials: "same-origin",
+          headers: { Accept: "application/json" },
+        });
+        const type = res.headers.get("content-type") || "";
+        if (!res.ok || !type.includes("application/json")) {
+          throw new Error("Backend PHP indisponível");
+        }
+        const data = await res.json();
+        if (!data?.ok || !data.csrf) {
+          throw new Error(data?.error || "Backend PHP indisponível");
+        }
+        setCsrf(data.csrf);
+        fillUnits(data.units || []);
+        if (data.adminUrl) adminUrl = data.adminUrl;
+        backendReady = true;
+        showStaticHint(false);
+        if (data.user) {
+          showFeedback(`Olá, ${data.user.name}. Redirecionando…`, "success");
+          window.setTimeout(() => {
+            window.location.href = data.adminUrl || adminUrl;
+          }, 400);
+        }
+        return true;
+      } catch (err) {
+        backendReady = false;
+        showStaticHint(true);
+        showFeedback(
+          "Login precisa do PHP local: php -S 0.0.0.0:8080 router.php",
+          "error"
+        );
+        return false;
+      } finally {
+        booting = null;
+      }
+    })();
+    return booting;
   }
 
   function focusActiveForm() {
-    const active = overlay.querySelector(".login-sheet__form.is-active input");
+    const active = overlay.querySelector(".login-sheet__form.is-active input:not([type=hidden])");
     active?.focus();
   }
 
@@ -58,15 +157,13 @@
     focusActiveForm();
   }
 
-  function openLogin(tab) {
+  async function openLogin(tab) {
     overlay.classList.add("is-open");
     overlay.setAttribute("aria-hidden", "false");
     document.body.classList.add("login-open");
-    if (isStaticAuthHost()) showStaticHint();
-    if (tabButtons.length) {
-      if (tab) setTab(tab);
-      else setTab(overlay.dataset.tab || "login");
-    }
+    if (tab) setTab(tab);
+    else setTab(overlay.dataset.tab || "login");
+    await bootBackend();
   }
 
   function closeLogin() {
@@ -75,21 +172,79 @@
     document.body.classList.remove("login-open");
   }
 
+  async function submitAuth(form, event) {
+    event.preventDefault();
+    event.stopPropagation();
+    showFeedback("");
+
+    const ready = backendReady || (await bootBackend());
+    if (!ready || !csrf) {
+      showFeedback("Backend PHP não encontrado nesta URL.", "error");
+      return;
+    }
+
+    const panel = form.getAttribute("data-auth-panel");
+    const action = panel === "register" ? "register" : "login";
+    const body = {
+      action,
+      _csrf: csrf,
+      email: form.email?.value?.trim() || "",
+      password: form.password?.value || "",
+    };
+    if (action === "register") {
+      body.name = form.name?.value?.trim() || "";
+      body.password_confirm = form.password_confirm?.value || "";
+      body.unit_id = form.unit_id?.value || "";
+    }
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+
+    try {
+      const res = await fetch(AUTH_URL, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrf,
+        },
+        body: JSON.stringify(body),
+      });
+      const type = res.headers.get("content-type") || "";
+      const data = type.includes("application/json") ? await res.json() : null;
+      if (!data) {
+        throw new Error("Resposta inválida do backend PHP");
+      }
+      if (!res.ok || !data.ok) {
+        showFeedback(data.error || "Não foi possível autenticar.", "error");
+        if (res.status === 419) {
+          backendReady = false;
+          await bootBackend();
+        }
+        return;
+      }
+      showFeedback(data.message || "Login ok. Abrindo painel…", "success");
+      window.location.href = data.redirect || adminUrl;
+    } catch (err) {
+      showFeedback(
+        "Falha ao falar com o PHP. Use: php -S 0.0.0.0:8080 router.php",
+        "error"
+      );
+      showStaticHint(true);
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  }
+
   openers.forEach((btn) => btn.addEventListener("click", () => openLogin("login")));
   closers.forEach((btn) => btn.addEventListener("click", closeLogin));
   tabButtons.forEach((btn) => {
     btn.addEventListener("click", () => setTab(btn.getAttribute("data-auth-tab") || "login"));
   });
-
-  // Nunca deixa formulário de auth navegar em host estático (evita HTTP 405).
   forms.forEach((form) => {
-    form.setAttribute("action", "javascript:void(0)");
     form.addEventListener("submit", (event) => {
-      if (!isStaticAuthHost()) return;
-      event.preventDefault();
-      event.stopPropagation();
-      showStaticHint();
-      window.location.href = "gestao-local.html";
+      submitAuth(form, event);
     });
   });
 
@@ -99,12 +254,11 @@
     }
   });
 
-  if (isStaticAuthHost() && hint) {
-    hint.hidden = false;
-    hint.classList.add("is-alert");
-  }
+  if (hint) hint.hidden = true;
 
-  if (overlay.classList.contains("is-open") && tabButtons.length) {
-    setTab(overlay.dataset.tab || "login");
+  if (overlay.classList.contains("is-open")) {
+    openLogin(overlay.dataset.tab || "login");
+  } else if (csrf) {
+    backendReady = true;
   }
 })();

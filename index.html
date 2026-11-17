@@ -139,23 +139,60 @@
       <h2 id="login-title" class="login-sheet__title">Gestão Vértice</h2>
       <p class="login-sheet__lead">Entre com sua conta ou crie um acesso para o painel administrativo.</p>
 
-      <div class="login-sheet__hint is-alert" id="php-auth-hint">
-        Nesta Vercel <strong>não existe backend PHP</strong> — tentar login aqui
-        gera <strong>HTTP 405</strong>.
-        <br /><br />
-        No PC rode:
-        <strong>php -S 0.0.0.0:8080 router.php</strong>
-        e abra
-        <a href="http://127.0.0.1:8080/" style="color:var(--gold-hi)">http://127.0.0.1:8080/</a>
-        <br /><br />
-        Usuário teste:
-        <strong>teste@vertice.local</strong> /
-        <strong>Teste@2026</strong>
+      <div class="login-tabs" role="tablist" aria-label="Acesso">
+        <button type="button" class="login-tabs__btn is-active" data-auth-tab="login" role="tab" aria-selected="true">Entrar</button>
+        <button type="button" class="login-tabs__btn" data-auth-tab="register" role="tab" aria-selected="false">Criar conta</button>
       </div>
 
-      <a class="login-sheet__submit" href="gestao-local.html" style="display:block;text-align:center;text-decoration:none;margin-top:1rem">
-        Como acessar a gestão
-      </a>
+      <div class="login-sheet__hint" id="php-auth-hint" hidden>
+        O login fala com <strong>api/auth.php</strong> (PHP + SQLite).
+        Suba o backend: <strong>php -S 0.0.0.0:8080 router.php</strong>
+        e abra <a href="http://127.0.0.1:8080/" style="color:var(--gold-hi)">http://127.0.0.1:8080/</a>.
+        Teste: <strong>teste@vertice.local</strong> / <strong>Teste@2026</strong>
+      </div>
+
+      <form method="post" action="api/auth.php" class="login-sheet__form is-active" id="form-login" data-auth-panel="login" autocomplete="on">
+        <input type="hidden" name="action" value="login" />
+        <label>
+          E-mail
+          <input type="email" name="email" required placeholder="seu@email.com" />
+        </label>
+        <label>
+          Senha
+          <input type="password" name="password" required placeholder="••••••••" />
+        </label>
+        <button type="submit" class="login-sheet__submit">Entrar no painel</button>
+        <p class="login-sheet__switch">
+          Não tem conta?
+          <button type="button" class="login-sheet__link" data-auth-tab="register">Criar conta</button>
+        </p>
+      </form>
+
+      <form method="post" action="api/auth.php" class="login-sheet__form" id="form-register" data-auth-panel="register" autocomplete="on">
+        <input type="hidden" name="action" value="register" />
+        <label>
+          Nome completo
+          <input type="text" name="name" required placeholder="Seu nome" />
+        </label>
+        <label>
+          E-mail
+          <input type="email" name="email" required placeholder="seu@email.com" />
+        </label>
+        <label>
+          Senha
+          <input type="password" name="password" required minlength="8" placeholder="Mínimo 8 caracteres" />
+        </label>
+        <label>
+          Confirmar senha
+          <input type="password" name="password_confirm" required minlength="8" placeholder="Repita a senha" />
+        </label>
+        <p class="login-sheet__hint">Novas contas entram com perfil de <strong>Recepção</strong>.</p>
+        <button type="submit" class="login-sheet__submit">Criar conta e entrar</button>
+        <p class="login-sheet__switch">
+          Já tem conta?
+          <button type="button" class="login-sheet__link" data-auth-tab="login">Fazer login</button>
+        </p>
+      </form>
     </section>
   </div>
 
