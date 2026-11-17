@@ -26,7 +26,7 @@ $stmt->execute($params);
 $rows = $stmt->fetchAll();
 
 $units = $pdo->query('SELECT id, name FROM units WHERE active = 1 ORDER BY name')->fetchAll();
-$plans = $pdo->query('SELECT id, name, price_cents FROM plans WHERE active = 1 ORDER BY price_cents')->fetchAll();
+$plans = $pdo->query('SELECT id, name, price_cents, description FROM plans WHERE active = 1 ORDER BY price_cents')->fetchAll();
 $editId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $edit = null;
 if ($editId) {
@@ -34,83 +34,158 @@ if ($editId) {
     $st->execute([$editId]);
     $edit = $st->fetch() ?: null;
 }
+$showForm = can('members.write') && (isset($_GET['new']) || $edit || !$rows);
 
 layout_header('Alunos', 'members');
 ?>
+<div class="section-hero">
+  <div class="section-hero__copy">
+    <h2>Cadastro e carteira de alunos</h2>
+    <p>Gerencie fichas, status e plano inicial com a mesma experiência VIP da marca Vértice.</p>
+  </div>
+  <div class="section-hero__actions">
+    <form method="get" class="search-bar">
+      <input type="search" name="q" placeholder="Buscar nome, e-mail, telefone…" value="<?= e($q) ?>">
+      <button class="btn btn-sm btn-ghost" type="submit">Buscar</button>
+    </form>
+    <?php if (can('members.write')): ?>
+      <a class="btn btn-primary" href="<?= e(admin_url('pages/members.php?new=1')) ?>">Novo cadastro</a>
+    <?php endif; ?>
+  </div>
+</div>
+
 <section class="split-2">
   <div class="panel">
     <div class="panel-head">
-      <h2>Lista</h2>
-      <form method="get" style="display:flex;gap:.5rem">
-        <input type="search" name="q" placeholder="Buscar..." value="<?= e($q) ?>">
-        <button class="btn btn-sm" type="submit">Filtrar</button>
-      </form>
+      <h2>Alunos</h2>
+      <span class="badge"><?= count($rows) ?> registro(s)</span>
     </div>
-    <div class="table-wrap">
-      <table class="data">
-        <thead><tr><th>Nome</th><th>Unidade</th><th>Plano</th><th>Status</th><th></th></tr></thead>
-        <tbody>
+    <?php if (!$rows): ?>
+      <div class="empty-state">
+        <strong>Nenhum aluno encontrado</strong>
+        Use o formulário ao lado para criar o primeiro cadastro.
+      </div>
+    <?php else: ?>
+      <div class="member-list">
         <?php foreach ($rows as $r): ?>
-          <tr>
-            <td>
-              <strong><?= e($r['name']) ?></strong><br>
-              <span class="muted"><?= e($r['phone'] ?: $r['email']) ?></span>
-            </td>
-            <td><?= e($r['unit_name']) ?></td>
-            <td><?= e($r['plan_name'] ?: '—') ?></td>
-            <td><span class="badge"><?= e($r['status']) ?></span></td>
-            <td><a class="btn btn-sm" href="?id=<?= (int)$r['id'] ?>">Editar</a></td>
-          </tr>
+          <article class="member-row">
+            <div>
+              <div class="person">
+                <span class="avatar" aria-hidden="true"><?= e(initials($r['name'])) ?></span>
+                <div>
+                  <strong><?= e($r['name']) ?></strong>
+                  <span class="muted"><?= e($r['phone'] ?: $r['email'] ?: 'Sem contato') ?></span>
+                </div>
+              </div>
+              <div class="member-row__meta">
+                <span><?= e($r['unit_name']) ?></span>
+                <span><?= e($r['plan_name'] ?: 'Sem plano') ?></span>
+                <span class="badge <?= e(status_badge_class($r['status'])) ?>"><?= e(status_label($r['status'])) ?></span>
+              </div>
+            </div>
+            <div class="member-row__actions">
+              <?php if (can('members.write')): ?>
+                <a class="btn btn-sm btn-ghost" href="<?= e(admin_url('pages/members.php?id=' . (int) $r['id'])) ?>">Editar ficha</a>
+              <?php endif; ?>
+            </div>
+          </article>
         <?php endforeach; ?>
-        <?php if (!$rows): ?><tr><td colspan="5" class="muted">Nenhum aluno.</td></tr><?php endif; ?>
-        </tbody>
-      </table>
-    </div>
+      </div>
+    <?php endif; ?>
   </div>
 
-  <?php if (can('members.write')): ?>
-  <div class="panel">
-    <h2><?= $edit ? 'Editar aluno' : 'Novo aluno' ?></h2>
-    <form method="post" action="<?= e(admin_url('api/members.php')) ?>" class="stack-form">
+  <?php if (can('members.write') && $showForm): ?>
+  <aside class="form-card">
+    <p class="form-card__eyebrow"><?= $edit ? 'Atualização' : 'Novo aluno' ?></p>
+    <h3 class="form-card__title"><?= $edit ? 'Editar cadastro' : 'Cadastro VIP' ?></h3>
+    <p class="form-card__lead">
+      <?= $edit
+        ? 'Revise os dados da ficha e mantenha status e unidade alinhados ao atendimento.'
+        : 'Preencha a ficha completa. Você pode já vincular um plano e gerar a primeira mensalidade.' ?>
+    </p>
+
+    <form method="post" action="<?= e(admin_url('api/members.php')) ?>" class="form-grid">
       <?= csrf_field() ?>
       <input type="hidden" name="action" value="<?= $edit ? 'update' : 'create' ?>">
-      <?php if ($edit): ?><input type="hidden" name="id" value="<?= (int)$edit['id'] ?>"><?php endif; ?>
-      <label>Nome<input name="name" required value="<?= e($edit['name'] ?? '') ?>"></label>
-      <label>E-mail<input type="email" name="email" value="<?= e($edit['email'] ?? '') ?>"></label>
-      <label>Telefone<input name="phone" value="<?= e($edit['phone'] ?? '') ?>"></label>
-      <label>Documento<input name="document" value="<?= e($edit['document'] ?? '') ?>"></label>
-      <label>Nascimento<input type="date" name="birth_date" value="<?= e($edit['birth_date'] ?? '') ?>"></label>
+      <?php if ($edit): ?><input type="hidden" name="id" value="<?= (int) $edit['id'] ?>"><?php endif; ?>
+
+      <label class="full">Nome completo
+        <input name="name" required autocomplete="name" placeholder="Ex.: Ashiley Costa" value="<?= e($edit['name'] ?? '') ?>">
+      </label>
+      <label>E-mail
+        <input type="email" name="email" autocomplete="email" placeholder="aluno@email.com" value="<?= e($edit['email'] ?? '') ?>">
+      </label>
+      <label>WhatsApp
+        <input name="phone" inputmode="tel" placeholder="21 99999-9999" value="<?= e($edit['phone'] ?? '') ?>">
+      </label>
+      <label>Documento
+        <input name="document" placeholder="CPF" value="<?= e($edit['document'] ?? '') ?>">
+      </label>
+      <label>Nascimento
+        <input type="date" name="birth_date" value="<?= e($edit['birth_date'] ?? '') ?>">
+      </label>
       <label>Unidade
         <select name="unit_id" required>
           <?php foreach ($units as $u): ?>
-            <option value="<?= (int)$u['id'] ?>" <?= (int)($edit['unit_id'] ?? current_unit_id() ?? 0) === (int)$u['id'] ? 'selected' : '' ?>><?= e($u['name']) ?></option>
+            <option value="<?= (int) $u['id'] ?>" <?= (int) ($edit['unit_id'] ?? current_unit_id() ?? 0) === (int) $u['id'] ? 'selected' : '' ?>>
+              <?= e($u['name']) ?>
+            </option>
           <?php endforeach; ?>
         </select>
       </label>
       <label>Status
         <select name="status">
-          <?php foreach (['active','inactive','overdue'] as $st): ?>
-            <option value="<?= $st ?>" <?= ($edit['status'] ?? 'active') === $st ? 'selected' : '' ?>><?= $st ?></option>
+          <?php foreach (['active' => 'Ativo', 'late' => 'Em atraso', 'inactive' => 'Inativo'] as $st => $label): ?>
+            <option value="<?= e($st) ?>" <?= ($edit['status'] ?? 'active') === $st ? 'selected' : '' ?>><?= e($label) ?></option>
           <?php endforeach; ?>
         </select>
       </label>
-      <label>Observações<textarea name="notes" rows="3"><?= e($edit['notes'] ?? '') ?></textarea></label>
+      <label class="full">Observações
+        <textarea name="notes" rows="3" placeholder="Preferências, restrições, observações da recepção…"><?= e($edit['notes'] ?? '') ?></textarea>
+      </label>
+
       <?php if (!$edit): ?>
-      <label>Plano inicial (opcional)
-        <select name="plan_id">
-          <option value="">— Sem plano —</option>
-          <?php foreach ($plans as $p): ?>
-            <option value="<?= (int)$p['id'] ?>"><?= e($p['name']) ?> (<?= e(money_br((int)$p['price_cents'])) ?>)</option>
-          <?php endforeach; ?>
-        </select>
-      </label>
+        <div class="full">
+          <p class="form-card__eyebrow" style="margin-bottom:.55rem">Plano inicial</p>
+          <div class="plan-chips">
+            <label class="plan-chip">
+              <input type="radio" name="plan_id" value="" checked>
+              <span>
+                <strong>Sem plano agora</strong>
+                <span>Só cadastra a ficha</span>
+              </span>
+              <em>—</em>
+            </label>
+            <?php foreach ($plans as $p): ?>
+              <label class="plan-chip">
+                <input type="radio" name="plan_id" value="<?= (int) $p['id'] ?>">
+                <span>
+                  <strong><?= e($p['name']) ?></strong>
+                  <span><?= e($p['description'] ?: 'Plano Vértice') ?></span>
+                </span>
+                <em><?= e(money_br((int) $p['price_cents'])) ?></em>
+              </label>
+            <?php endforeach; ?>
+          </div>
+          <p class="field-hint" style="margin-top:.65rem">Ao escolher um plano, a assinatura e a fatura inicial são geradas automaticamente.</p>
+        </div>
       <?php endif; ?>
-      <div class="form-actions">
-        <button class="btn btn-primary" type="submit">Salvar</button>
-        <?php if ($edit): ?><a class="btn" href="<?= e(admin_url('pages/members.php')) ?>">Cancelar</a><?php endif; ?>
+
+      <div class="form-actions full">
+        <button class="btn btn-primary" type="submit"><?= $edit ? 'Salvar alterações' : 'Concluir cadastro' ?></button>
+        <?php if ($edit || isset($_GET['new'])): ?>
+          <a class="btn btn-ghost" href="<?= e(admin_url('pages/members.php')) ?>">Cancelar</a>
+        <?php endif; ?>
       </div>
     </form>
-  </div>
+  </aside>
+  <?php elseif (can('members.write')): ?>
+  <aside class="form-card">
+    <p class="form-card__eyebrow">Atalho</p>
+    <h3 class="form-card__title">Novo cadastro</h3>
+    <p class="form-card__lead">Abra o formulário completo para registrar um aluno e, se quiser, já vincular o plano.</p>
+    <a class="btn btn-primary" href="<?= e(admin_url('pages/members.php?new=1')) ?>">Abrir cadastro</a>
+  </aside>
   <?php endif; ?>
 </section>
 <?php layout_footer(); ?>

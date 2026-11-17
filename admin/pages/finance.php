@@ -38,18 +38,25 @@ $units = $pdo->query('SELECT id, name FROM units WHERE active = 1 ORDER BY name'
 
 layout_header('Financeiro', 'finance');
 ?>
+<div class="section-hero">
+  <div class="section-hero__copy">
+    <h2>Caixa e cobranças</h2>
+    <p>Baixe mensalidades, acompanhe inadimplência e lance despesas da unidade.</p>
+  </div>
+</div>
+
 <section class="panel">
   <div class="panel-head">
     <h2>Faturas</h2>
     <div style="display:flex;gap:.5rem;flex-wrap:wrap">
       <?php foreach (['open' => 'Abertas', 'paid' => 'Pagas', 'cancelled' => 'Canceladas', 'all' => 'Todas'] as $k => $label): ?>
-        <a class="btn btn-sm<?= $status === $k ? ' btn-primary' : '' ?>" href="?status=<?= e($k) ?>"><?= e($label) ?></a>
+        <a class="btn btn-sm<?= $status === $k ? ' btn-primary' : ' btn-ghost' ?>" href="?status=<?= e($k) ?>"><?= e($label) ?></a>
       <?php endforeach; ?>
       <?php if (can('finance.write')): ?>
       <form method="post" action="<?= e(admin_url('api/finance.php')) ?>" style="display:inline">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="generate_dues">
-        <button class="btn btn-sm" type="submit" data-confirm="Gerar mensalidades do ciclo atual?">Gerar mensalidades</button>
+        <button class="btn btn-sm btn-primary" type="submit" data-confirm="Gerar mensalidades do ciclo atual?">Gerar mensalidades</button>
       </form>
       <?php endif; ?>
     </div>
@@ -64,7 +71,13 @@ layout_header('Financeiro', 'finance');
           <td><?= e($i['description']) ?></td>
           <td><?= e($i['due_date']) ?></td>
           <td><?= e(money_br((int)$i['amount_cents'])) ?></td>
-          <td><span class="badge <?= $i['status'] === 'paid' ? 'badge--ok' : ($i['due_date'] < date('Y-m-d') && $i['status']==='open' ? 'badge--danger' : 'badge--warn') ?>"><?= e($i['status']) ?></span></td>
+          <?php
+            $invStatus = $i['status'];
+            if ($invStatus === 'open' && $i['due_date'] < date('Y-m-d')) {
+                $invStatus = 'overdue';
+            }
+          ?>
+          <td><span class="badge <?= e(status_badge_class($invStatus)) ?>"><?= e(status_label($invStatus)) ?></span></td>
           <td>
             <?php if (can('finance.write') && $i['status'] === 'open'): ?>
             <form method="post" action="<?= e(admin_url('api/finance.php')) ?>" class="form-grid" style="grid-template-columns:1fr 1fr auto;min-width:280px">

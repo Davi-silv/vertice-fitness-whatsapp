@@ -1,7 +1,96 @@
 <?php
 declare(strict_types=1);
-session_start();
-?><!DOCTYPE html>
+
+require_once __DIR__ . '/admin/includes/bootstrap.php';
+
+$authError = '';
+$authSuccess = '';
+$authTab = ($_GET['tab'] ?? 'login') === 'register' ? 'register' : 'login';
+$openLogin = isset($_GET['login']) || isset($_GET['tab']);
+$units = [];
+
+try {
+    $units = db()->query('SELECT id, name FROM units WHERE active = 1 ORDER BY name')->fetchAll();
+} catch (Throwable $e) {
+    $units = [];
+}
+
+if (current_user()) {
+    if (isset($_GET['admin'])) {
+        redirect(admin_url('index.php'));
+    }
+}
+
+if (is_post()) {
+    verify_csrf();
+    $form = (string) ($_POST['form'] ?? '');
+
+    if ($form === 'staff_login') {
+        $email = trim((string) ($_POST['email'] ?? ''));
+        $password = (string) ($_POST['password'] ?? '');
+        if (attempt_login($email, $password)) {
+            redirect(admin_url('index.php'));
+        }
+        $authError = 'E-mail ou senha inválidos.';
+        $authTab = 'login';
+        $openLogin = true;
+    }
+
+    if ($form === 'staff_register') {
+        $authTab = 'register';
+        $openLogin = true;
+        $name = trim((string) ($_POST['name'] ?? ''));
+        $email = mb_strtolower(trim((string) ($_POST['email'] ?? '')));
+        $password = (string) ($_POST['password'] ?? '');
+        $password2 = (string) ($_POST['password_confirm'] ?? '');
+        $unitId = (int) ($_POST['unit_id'] ?? 0);
+
+        if ($name === '' || $email === '' || $password === '') {
+            $authError = 'Preencha nome, e-mail e senha.';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $authError = 'Informe um e-mail válido.';
+        } elseif (strlen($password) < 8) {
+            $authError = 'A senha deve ter pelo menos 8 caracteres.';
+        } elseif ($password !== $password2) {
+            $authError = 'As senhas não coincidem.';
+        } else {
+            $exists = db()->prepare('SELECT id FROM users WHERE lower(email) = lower(?) LIMIT 1');
+            $exists->execute([$email]);
+            if ($exists->fetch()) {
+                $authError = 'Já existe uma conta com este e-mail. Faça login.';
+                $authTab = 'login';
+            } else {
+                $role = db()->query("SELECT id FROM roles WHERE slug = 'recepcao' LIMIT 1")->fetch();
+                if (!$role) {
+                    $authError = 'Sistema ainda sem perfis. Execute o seed do banco.';
+                } else {
+                    if ($unitId <= 0 && $units) {
+                        $unitId = (int) $units[0]['id'];
+                    }
+                    db()->prepare(
+                        'INSERT INTO users (unit_id, role_id, name, email, password_hash, active)
+                         VALUES (?, ?, ?, ?, ?, 1)'
+                    )->execute([
+                        $unitId > 0 ? $unitId : null,
+                        (int) $role['id'],
+                        $name,
+                        $email,
+                        password_hash($password, PASSWORD_DEFAULT),
+                    ]);
+                    $newId = (int) db()->lastInsertId();
+                    audit('user.register', 'users', $newId, ['source' => 'landing']);
+                    if (attempt_login($email, $password)) {
+                        redirect(admin_url('index.php'));
+                    }
+                    $authSuccess = 'Conta criada. Faça login para continuar.';
+                    $authTab = 'login';
+                }
+            }
+        }
+    }
+}
+?>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -14,8 +103,8 @@ session_start();
   <link rel="stylesheet" href="assets/styles.css" />
   <link rel="icon" href="assets/logo-icon.png" type="image/png" />
 </head>
-<body>
-<div class="atmosphere" aria-hidden="true">
+<body class="<?= $openLogin ? 'login-open' : '' ?>">
+  <div class="atmosphere" aria-hidden="true">
     <div class="atmosphere__base"></div>
     <div class="atmosphere__mesh atmosphere__mesh--tl"></div>
     <div class="atmosphere__mesh atmosphere__mesh--br"></div>
@@ -29,6 +118,20 @@ session_start();
     <div class="atmosphere__vignette"></div>
     <div class="atmosphere__pulse"></div>
   </div>
+
+  <header class="site-bar">
+    <a class="site-bar__brand" href="/">
+      <img src="assets/logo-icon.png" alt="" width="28" height="28" />
+      <span>Vértice</span>
+    </a>
+    <?php if (current_user()): ?>
+      <a class="site-bar__login" href="<?= e(admin_url('index.php')) ?>">Abrir painel</a>
+    <?php else: ?>
+      <button type="button" class="site-bar__login" id="open-login" aria-haspopup="dialog" aria-controls="login-panel">
+        Login
+      </button>
+    <?php endif; ?>
+  </header>
 
   <main class="stage" data-parallax>
     <aside class="brand">
@@ -50,6 +153,16 @@ session_start();
       <p class="brand__lead">
         Concierge no WhatsApp: planos, horários, agendamento e cadastro — com a precisão de uma experiência VIP.
       </p>
+
+      <div class="brand__actions">
+        <?php if (!current_user()): ?>
+          <button type="button" class="brand__cta" id="open-login-cta" aria-controls="login-panel">
+            Acessar área restrita
+          </button>
+        <?php else: ?>
+          <a class="brand__cta" href="<?= e(admin_url('index.php')) ?>">Ir para a gestão</a>
+        <?php endif; ?>
+      </div>
 
       <div class="brand__rail" aria-label="Capacidades">
         <span>Planos</span>
@@ -110,6 +223,110 @@ session_start();
     </section>
   </main>
 
+  <div
+    class="login-overlay<?= $openLogin ? ' is-open' : '' ?>"
+    id="login-panel"
+    data-tab="<?= e($authTab) ?>"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="login-title"
+    aria-hidden="<?= $openLogin ? 'false' : 'true' ?>"
+  >
+    <button type="button" class="login-overlay__backdrop" id="close-login-backdrop" aria-label="Fechar login"></button>
+    <section class="login-sheet">
+      <button type="button" class="login-sheet__close" id="close-login" aria-label="Fechar">&times;</button>
+      <p class="login-sheet__eyebrow">Área restrita</p>
+      <h2 id="login-title" class="login-sheet__title">Gestão Vértice</h2>
+      <p class="login-sheet__lead">Entre com sua conta ou crie um acesso para o painel administrativo.</p>
+
+      <div class="login-tabs" role="tablist" aria-label="Acesso">
+        <button type="button" class="login-tabs__btn<?= $authTab === 'login' ? ' is-active' : '' ?>" data-auth-tab="login" role="tab" aria-selected="<?= $authTab === 'login' ? 'true' : 'false' ?>">
+          Entrar
+        </button>
+        <button type="button" class="login-tabs__btn<?= $authTab === 'register' ? ' is-active' : '' ?>" data-auth-tab="register" role="tab" aria-selected="<?= $authTab === 'register' ? 'true' : 'false' ?>">
+          Criar conta
+        </button>
+      </div>
+
+      <?php if ($authError !== ''): ?>
+        <div class="login-sheet__error"><?= e($authError) ?></div>
+      <?php endif; ?>
+      <?php if ($authSuccess !== ''): ?>
+        <div class="login-sheet__success"><?= e($authSuccess) ?></div>
+      <?php endif; ?>
+
+      <form
+        method="post"
+        class="login-sheet__form<?= $authTab === 'login' ? ' is-active' : '' ?>"
+        id="form-login"
+        data-auth-panel="login"
+        autocomplete="on"
+      >
+        <?= csrf_field() ?>
+        <input type="hidden" name="form" value="staff_login" />
+        <label>
+          E-mail
+          <input type="email" name="email" required value="<?= e($authTab === 'login' ? ($_POST['email'] ?? '') : '') ?>" placeholder="seu@email.com" />
+        </label>
+        <label>
+          Senha
+          <input type="password" name="password" required placeholder="••••••••" />
+        </label>
+        <button type="submit" class="login-sheet__submit">Entrar no painel</button>
+        <p class="login-sheet__switch">
+          Não tem conta?
+          <button type="button" class="login-sheet__link" data-auth-tab="register">Criar conta</button>
+        </p>
+      </form>
+
+      <form
+        method="post"
+        class="login-sheet__form<?= $authTab === 'register' ? ' is-active' : '' ?>"
+        id="form-register"
+        data-auth-panel="register"
+        autocomplete="on"
+      >
+        <?= csrf_field() ?>
+        <input type="hidden" name="form" value="staff_register" />
+        <label>
+          Nome completo
+          <input type="text" name="name" required value="<?= e($authTab === 'register' ? ($_POST['name'] ?? '') : '') ?>" placeholder="Seu nome" />
+        </label>
+        <label>
+          E-mail
+          <input type="email" name="email" required value="<?= e($authTab === 'register' ? ($_POST['email'] ?? '') : '') ?>" placeholder="seu@email.com" />
+        </label>
+        <?php if ($units): ?>
+        <label>
+          Unidade
+          <select name="unit_id" required>
+            <?php foreach ($units as $u): ?>
+              <option value="<?= (int) $u['id'] ?>" <?= (int) ($_POST['unit_id'] ?? 0) === (int) $u['id'] ? 'selected' : '' ?>>
+                <?= e($u['name']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <?php endif; ?>
+        <label>
+          Senha
+          <input type="password" name="password" required minlength="8" placeholder="Mínimo 8 caracteres" />
+        </label>
+        <label>
+          Confirmar senha
+          <input type="password" name="password_confirm" required minlength="8" placeholder="Repita a senha" />
+        </label>
+        <p class="login-sheet__hint">Novas contas entram com perfil de <strong>Recepção</strong>. Um admin pode alterar o cargo depois.</p>
+        <button type="submit" class="login-sheet__submit">Criar conta e entrar</button>
+        <p class="login-sheet__switch">
+          Já tem conta?
+          <button type="button" class="login-sheet__link" data-auth-tab="login">Fazer login</button>
+        </p>
+      </form>
+    </section>
+  </div>
+
   <script src="assets/app.js"></script>
+  <script src="assets/login-modal.js"></script>
 </body>
 </html>

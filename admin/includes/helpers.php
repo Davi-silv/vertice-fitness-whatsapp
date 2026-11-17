@@ -146,6 +146,39 @@ function page_url(string $file): string
     return admin_url('pages/' . ltrim($file, '/'));
 }
 
+function status_label(string $status): string
+{
+    return match ($status) {
+        'active' => 'Ativo',
+        'inactive' => 'Inativo',
+        'late', 'overdue' => 'Em atraso',
+        'open' => 'Em aberto',
+        'paid' => 'Pago',
+        'cancelled' => 'Cancelado',
+        'pending' => 'Pendente',
+        'scheduled' => 'Agendado',
+        'booked' => 'Reservado',
+        default => $status,
+    };
+}
+
+function status_badge_class(string $status): string
+{
+    return match ($status) {
+        'active', 'paid', 'ok' => 'badge--ok',
+        'late', 'overdue', 'inactive', 'cancelled', 'danger' => 'badge--danger',
+        default => 'badge--warn',
+    };
+}
+
+function initials(string $name): string
+{
+    $parts = preg_split('/\s+/u', trim($name)) ?: [];
+    $first = mb_substr($parts[0] ?? 'V', 0, 1);
+    $last = mb_substr($parts[count($parts) - 1] ?? '', 0, 1);
+    return mb_strtoupper($first . ($last !== $first ? $last : ''));
+}
+
 function admin_base(): string
 {
     return rtrim(admin_url(''), '/');

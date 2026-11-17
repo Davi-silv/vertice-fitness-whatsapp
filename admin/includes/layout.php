@@ -44,7 +44,7 @@ function layout_header(string $title, string $active = ''): void
   <div class="admin-shell">
     <aside class="admin-sidebar">
       <a class="admin-brand" href="<?= e(admin_url('index.php')) ?>">
-        <span class="admin-brand__mark">V</span>
+        <img class="admin-brand__logo" src="<?= e(admin_url('../assets/logo-icon.png')) ?>" alt="" width="40" height="40" />
         <span class="admin-brand__text">
           <strong>Vértice</strong>
           <small>Gestão</small>
