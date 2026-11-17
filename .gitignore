@@ -1,0 +1,26 @@
+# Dependências
+node_modules/
+
+# Ambiente e segredos
+.env
+.env.*
+!.env.example
+
+# Dados locais gerados pelo PHP
+data/leads.json
+
+# Sistema / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+*.swp
+*.swo
+
+# Vercel
+.vercel/
+
+# PHP
+vendor/
+composer.lock

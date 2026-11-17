@@ -1,0 +1,14 @@
+{
+  "name": "vertice-fitness-whatsapp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Landing page Vértice Fitness com concierge WhatsApp (PHP local + API serverless na Vercel)",
+  "scripts": {
+    "dev:php": "php -S 127.0.0.1:8080 -t .",
+    "dev:vercel": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
