@@ -145,20 +145,12 @@
       </div>
 
       <div class="login-sheet__hint" id="auth-hint" hidden>
-        Para entrar no painel, use o Node na sua máquina:
-        <br /><br />
-        <code>npm run seed && npm run dev</code>
-        <br /><br />
-        Depois abra
-        <a href="http://127.0.0.1:3100/?login=1" style="color:var(--gold-hi)"><strong>http://127.0.0.1:3100/</strong></a>
+        Não foi possível falar com a API. Confirme que o servidor Node está no ar
+        (<code>npm run dev</code>) ou recarregue a página na Vercel.
         <br /><br />
         Login teste:
         <strong>teste@vertice.local</strong> /
         <strong>Teste@2026</strong>
-        <br /><br />
-        <a class="login-sheet__submit" href="http://127.0.0.1:3100/?login=1" style="display:block;text-align:center;text-decoration:none;margin-top:.5rem">
-          Abrir painel local
-        </a>
       </div>
 
       <form method="post" action="/api/auth" class="login-sheet__form is-active" id="form-login" data-auth-panel="login" autocomplete="on">

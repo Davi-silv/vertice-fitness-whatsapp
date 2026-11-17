@@ -60,5 +60,14 @@ Abra sempre pelo Node: **http://127.0.0.1:3100/**
 
 ## Vercel
 
-A landing estática + `/api/chat` serverless (`api/chat.js`) continuam para demo do concierge.  
-O **painel completo** (login + SQLite) roda no Node local (`npm run dev`).
+O app **completo** (landing + login + admin + chat) roda na Vercel via Express (`api/index.js` + `node:sqlite`).
+
+```bash
+vercel --prod
+```
+
+Site: https://ashiley.vercel.app  
+
+Login teste: `teste@vertice.local` / `Teste@2026`
+
+> Na Vercel o SQLite fica em `/tmp` (pode reiniciar em cold start). Para dados persistentes em produção, use um banco externo depois.

@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const { db, audit } = require("../db");
@@ -6,6 +7,10 @@ const { currentUser } = require("../middleware");
 const router = express.Router();
 
 router.get("/", (req, res) => {
+  if (!req.session) req.session = {};
+  if (!req.session.csrf) {
+    req.session.csrf = crypto.randomBytes(16).toString("hex");
+  }
   const user = currentUser(req);
   const units = db
     .prepare("SELECT id, name FROM units WHERE active = 1 ORDER BY name")
@@ -13,7 +18,7 @@ router.get("/", (req, res) => {
   res.json({
     ok: true,
     node: true,
-    csrf: req.session.id || "node",
+    csrf: String(req.session.csrf),
     units,
     user: user
       ? {
@@ -30,6 +35,8 @@ router.get("/", (req, res) => {
 router.post("/", (req, res) => {
   const action = String(req.body?.action || req.body?.form || "");
   try {
+    if (!req.session) req.session = {};
+
     if (action === "login" || action === "staff_login") {
       const email = String(req.body?.email || "").trim();
       const password = String(req.body?.password || "");
@@ -47,20 +54,14 @@ router.post("/", (req, res) => {
       if (!user || !bcrypt.compareSync(password, user.password_hash)) {
         return res.status(401).json({ ok: false, error: "E-mail ou senha inválidos." });
       }
-      req.session.regenerate((err) => {
-        if (err) {
-          return res.status(500).json({ ok: false, error: "Falha na sessão." });
-        }
-        req.session.userId = user.id;
-        if (user.unit_id) req.session.unitFilter = user.unit_id;
-        audit(user.id, "login", "users", user.id);
-        res.json({
-          ok: true,
-          redirect: "/admin/",
-          user: { name: user.name },
-        });
+      req.session.userId = user.id;
+      if (user.unit_id) req.session.unitFilter = user.unit_id;
+      audit(user.id, "login", "users", user.id);
+      return res.json({
+        ok: true,
+        redirect: "/admin/",
+        user: { name: user.name },
       });
-      return;
     }
 
     if (action === "register" || action === "staff_register") {
@@ -91,7 +92,7 @@ router.post("/", (req, res) => {
       }
       const role = db.prepare("SELECT id FROM roles WHERE slug = 'recepcao'").get();
       if (!role) {
-        return res.status(503).json({ ok: false, error: "Execute: npm run seed" });
+        return res.status(503).json({ ok: false, error: "Banco sem seed." });
       }
       if (unitId <= 0 && units[0]) unitId = units[0].id;
 
@@ -103,28 +104,15 @@ router.post("/", (req, res) => {
         .run(unitId || null, role.id, name, email, bcrypt.hashSync(password, 10));
       const newId = Number(info.lastInsertRowid);
       audit(newId, "user.register", "users", newId, { source: "api" });
-
-      req.session.regenerate((err) => {
-        if (err) {
-          return res.json({
-            ok: true,
-            redirect: "/?login=1",
-            message: "Conta criada. Faça login.",
-          });
-        }
-        req.session.userId = newId;
-        res.json({ ok: true, redirect: "/admin/", user: { name } });
-      });
-      return;
+      req.session.userId = newId;
+      return res.json({ ok: true, redirect: "/admin/", user: { name } });
     }
 
     if (action === "logout") {
       const user = currentUser(req);
       if (user) audit(user.id, "logout", "users", user.id);
-      req.session.destroy(() => {
-        res.json({ ok: true, redirect: "/" });
-      });
-      return;
+      req.session = null;
+      return res.json({ ok: true, redirect: "/" });
     }
 
     return res.status(400).json({ ok: false, error: "Ação inválida." });

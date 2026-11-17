@@ -107,12 +107,6 @@
     if (booting) return booting;
     booting = (async () => {
       try {
-        if (window.VerticeAPI?.isStaticHost?.()) {
-          setStaticMode(true);
-          showFeedback("");
-          backendReady = false;
-          return false;
-        }
         if (!window.VerticeAPI) {
           throw new Error("Cliente de API não carregado");
         }
@@ -208,11 +202,6 @@
     event.preventDefault();
     event.stopPropagation();
     showFeedback("");
-
-    if (window.VerticeAPI?.isStaticHost?.()) {
-      setStaticMode(true);
-      return;
-    }
 
     const ready = backendReady || (await bootBackend());
     if (!ready || !csrf) {
