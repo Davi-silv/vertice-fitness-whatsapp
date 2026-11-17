@@ -4,10 +4,14 @@ declare(strict_types=1);
 $authError = '';
 $authSuccess = '';
 $authTab = ($_GET['tab'] ?? 'login') === 'register' ? 'register' : 'login';
-$openLogin = isset($_GET['login']) || isset($_GET['tab']);
+$openLogin = isset($_GET['login']) || isset($_GET['tab']) || isset($_GET['err']);
 $units = [];
 $bootOk = false;
 $loggedUser = null;
+if (($_GET['err'] ?? '') === 'csrf') {
+    $authError = 'Sessão expirada. Tente entrar de novo.';
+    $openLogin = true;
+}
 
 try {
     require_once __DIR__ . '/admin/includes/bootstrap.php';
@@ -279,6 +283,7 @@ if (!function_exists('admin_url')) {
 
       <form
         method="post"
+        action="index.php"
         class="login-sheet__form<?= $authTab === 'login' ? ' is-active' : '' ?>"
         id="form-login"
         data-auth-panel="login"
@@ -303,6 +308,7 @@ if (!function_exists('admin_url')) {
 
       <form
         method="post"
+        action="index.php"
         class="login-sheet__form<?= $authTab === 'register' ? ' is-active' : '' ?>"
         id="form-register"
         data-auth-panel="register"

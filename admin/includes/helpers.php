@@ -41,8 +41,16 @@ function verify_csrf(): void
 {
     $token = $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
     if (!is_string($token) || !hash_equals(csrf_token(), $token)) {
+        $uri = urldecode(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
+        $isLanding = $uri === '/' || $uri === '/index.php' || $uri === '/index.html'
+            || str_ends_with($uri, '/index.php');
+        if ($isLanding || ($_POST['form'] ?? '') === 'staff_login' || ($_POST['form'] ?? '') === 'staff_register') {
+            header('Location: /?login=1&tab=login&err=csrf');
+            exit;
+        }
         http_response_code(419);
-        exit('CSRF inválido');
+        header('Content-Type: text/plain; charset=utf-8');
+        exit('CSRF inválido. Recarregue a página e tente de novo.');
     }
 }
 

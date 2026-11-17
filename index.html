@@ -145,13 +145,15 @@
       </div>
 
       <div class="login-sheet__hint" id="php-auth-hint" hidden>
-        Login e cadastro precisam do servidor PHP local:
+        Nesta hospedagem estática (Vercel) o login/cadastro não roda —
+        a Vercel devolve <strong>HTTP 405</strong> em POST para páginas HTML.
+        Use o servidor local:
         <strong>php -S 0.0.0.0:8080 router.php</strong>
-        e abra <a href="index.php" style="color:var(--gold-hi)">index.php</a>.
+        e abra <a href="http://127.0.0.1:8080/" style="color:var(--gold-hi)">http://127.0.0.1:8080/</a>.
       </div>
 
-      <form method="post" action="index.php" class="login-sheet__form is-active" id="form-login" data-auth-panel="login" autocomplete="on">
-        <input type="hidden" name="form" value="staff_login" />
+      <!-- method=get + action=# evita HTTP 405 na Vercel (POST em arquivo estático). -->
+      <form method="get" action="#php-auth-hint" class="login-sheet__form is-active" id="form-login" data-auth-panel="login" autocomplete="on">
         <label>
           E-mail
           <input type="email" name="email" required placeholder="seu@email.com" />
@@ -167,8 +169,7 @@
         </p>
       </form>
 
-      <form method="post" action="index.php" class="login-sheet__form" id="form-register" data-auth-panel="register" autocomplete="on">
-        <input type="hidden" name="form" value="staff_register" />
+      <form method="get" action="#php-auth-hint" class="login-sheet__form" id="form-register" data-auth-panel="register" autocomplete="on">
         <label>
           Nome completo
           <input type="text" name="name" required placeholder="Seu nome" />
@@ -197,12 +198,5 @@
 
   <script src="assets/app.js"></script>
   <script src="assets/login-modal.js"></script>
-  <script>
-    // Em hospedagem estática (ex.: Vercel), avisa que o auth exige PHP.
-    if (!/\.php$/i.test(location.pathname) && !location.port) {
-      const hint = document.getElementById("php-auth-hint");
-      if (hint) hint.hidden = false;
-    }
-  </script>
 </body>
 </html>
