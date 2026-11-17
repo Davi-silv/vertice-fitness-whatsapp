@@ -4,16 +4,16 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "installCommand": "npm install --ignore-scripts --omit=optional",
-  "buildCommand": "echo 'Landing estática + api/chat'",
-  "framework": null,
+  "buildCommand": "mkdir -p dist && cp index.html gestao-local.html dist/ && cp -r assets dist/ && mkdir -p dist/admin && cp -r public/admin/. dist/admin/",
+  "outputDirectory": "dist",
   "redirects": [
     { "source": "/admin", "destination": "/gestao-local.html", "permanent": false },
-    { "source": "/admin/:path*", "destination": "/gestao-local.html", "permanent": false },
+    { "source": "/admin/(.*)", "destination": "/gestao-local.html", "permanent": false },
     { "source": "/index.php", "destination": "/", "permanent": false },
     { "source": "/login", "destination": "/gestao-local.html", "permanent": false },
     { "source": "/api/auth", "destination": "/gestao-local.html", "permanent": false },
     { "source": "/api/auth.php", "destination": "/gestao-local.html", "permanent": false },
-    { "source": "/api/admin/:path*", "destination": "/gestao-local.html", "permanent": false }
+    { "source": "/api/admin/(.*)", "destination": "/gestao-local.html", "permanent": false }
   ],
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
