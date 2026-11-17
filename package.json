@@ -6,9 +6,9 @@
   "main": "server/index.js",
   "scripts": {
     "seed": "node server/seed.js",
-    "dev": "node server/index.js",
+    "dev": "node scripts/dev.js",
     "start": "node server/index.js",
-    "dev:fresh": "fuser -k 3100/tcp 2>/dev/null; node server/index.js"
+    "dev:fresh": "node scripts/dev.js"
   },
   "engines": {
     "node": "24.x"
