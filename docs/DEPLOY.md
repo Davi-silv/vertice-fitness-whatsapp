@@ -164,3 +164,32 @@ Aceite cookies no navegador; o estado na Vercel vive no cookie `vertice_state`.
 
 ### Build falhou na Vercel
 Este projeto **não precisa** de build. Framework = Other, Build Command vazio.
+
+---
+
+## 9. Painel de gestão (`/admin`) — hosting PHP
+
+O painel **não roda na Vercel** (não há runtime PHP nem disco SQLite persistente). Use a Vercel só para a landing; hospede `/admin` em PHP 8+ (VPS, cPanel, Railway com PHP, etc.).
+
+### Local / VPS simples
+
+```bash
+cd ashiley
+php database/seed.php
+php -S 0.0.0.0:8080 -t .
+# Painel: http://SEU_HOST:8080/admin/login.php
+```
+
+### Apache / Nginx
+
+- Document root = pasta do projeto (`ashiley/`)
+- PHP 8+ com extensão `pdo_sqlite`
+- Diretórios graváveis: `data/` e `data/uploads/`
+- Credenciais iniciais: ver `README.md` (seed)
+
+### Segurança em produção
+
+- Troque a senha do `admin@vertice.local` imediatamente
+- Restrinja acesso a `/admin` (VPN, IP allowlist ou HTTPS + senha forte)
+- Faça backup periódico de `data/vertice.db`
+- Não publique `data/vertice.db` no Git (já está no `.gitignore`)

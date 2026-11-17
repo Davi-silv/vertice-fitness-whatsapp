@@ -8,6 +8,18 @@ node_modules/
 
 # Dados locais gerados pelo PHP
 data/leads.json
+data/vertice.db
+data/vertice.db-*
+data/uploads/*
+!data/uploads/.gitkeep
+data/sessions/*
+!data/sessions/.gitkeep
+!data/.gitkeep
+data/vertice.db
+data/vertice.db-*
+data/uploads/*
+!data/uploads/.gitkeep
+data/sessions/
 
 # Sistema / IDE
 .DS_Store

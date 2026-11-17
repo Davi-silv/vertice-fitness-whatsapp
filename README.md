@@ -1,74 +1,71 @@
-# Vértice Fitness — Concierge WhatsApp
+# Vértice Fitness — Concierge WhatsApp + Gestão
 
-Landing page premium da **Vértice Fitness** com simulador de atendimento no WhatsApp: planos, horários, agendamento, cadastro e redirecionamento para Maps/WhatsApp.
+Landing page premium da **Vértice Fitness** com simulador de atendimento no WhatsApp, e painel administrativo em `/admin` (PHP + SQLite) para alunos, financeiro, agenda, estoque e comissões.
 
 ## Stack
 
-| Ambiente | Front | API do chat |
-|----------|-------|-------------|
-| Local | HTML / CSS / JS + `index.php` | `api.php` (PHP 8+) |
-| Vercel | HTML / CSS / JS estático | `api/chat.js` (serverless Node) |
+| Ambiente | Front | API do chat | Gestão `/admin` |
+|----------|-------|-------------|-----------------|
+| Local | HTML / CSS / JS + `index.php` | `api.php` (PHP 8+) | PHP 8 + PDO + SQLite |
+| Vercel | HTML / CSS / JS estático | `api/chat.js` (serverless Node) | **Não suportado** (sem PHP/SQLite persistente) |
 
-> A Vercel **não executa PHP**. Por isso o projeto inclui uma API equivalente em JavaScript para o deploy na nuvem.
+> A Vercel **não executa PHP**. Landing e chat sobem na Vercel; o painel de gestão precisa de hosting PHP (local, VPS, cPanel, etc.).
 
 ## Estrutura
 
 ```
 ashiley/
-├── index.html          # Página estática (também usada na Vercel)
-├── index.php           # Mesma página com session_start (local PHP)
-├── api.php             # Concierge local (sessão PHP + leads em data/)
-├── api/
-│   └── chat.js         # Concierge serverless (Vercel)
-├── assets/
-│   ├── app.js          # UI do chat
-│   ├── styles.css
-│   ├── logo-icon.png
-│   └── logo.png
-├── data/               # leads.json gerado localmente (gitignored)
-├── vercel.json
-├── package.json
-├── .env.example
-└── docs/DEPLOY.md      # GitHub + Vercel passo a passo
+├── index.html / index.php   # Landing
+├── api.php / api/chat.js    # Concierge WhatsApp
+├── assets/                  # CSS/JS da landing
+├── admin/                   # Painel de gestão
+│   ├── index.php            # Dashboard
+│   ├── login.php / logout.php
+│   ├── pages/               # Módulos (alunos, financeiro, …)
+│   ├── api/                 # Ações POST / CSV
+│   ├── assets/              # CSS/JS do painel
+│   └── includes/            # DB, auth, RBAC, layout
+├── database/
+│   ├── schema.sql
+│   └── seed.php
+├── data/                    # SQLite + uploads (gitignored)
+└── docs/DEPLOY.md
 ```
 
 ## Pré-requisitos
 
-- **Local PHP:** PHP 8.0+ (`php -v`)
-- **Deploy Vercel:** Conta [Vercel](https://vercel.com) + [GitHub](https://github.com) + Node 18+ (CLI opcional)
+- **Local PHP:** PHP 8.0+ com PDO SQLite (`php -v`)
+- **Deploy Vercel:** só a landing + chat Node
 
-## Rodar localmente (PHP)
+## Rodar localmente (landing + admin)
 
 ```bash
 cd ashiley
+php database/seed.php          # cria data/vertice.db e usuário admin
 php -S 127.0.0.1:8080 -t .
 ```
 
 Abra:
 
-- http://127.0.0.1:8080/ — ou `/index.php`
-- http://127.0.0.1:8080/index.html — front estático (API ainda via `api.php`)
+- http://127.0.0.1:8080/ — landing
+- http://127.0.0.1:8080/admin/login.php — gestão
 
-Cadastros feitos pelo chat são salvos em `data/leads.json`.
+### Credenciais seed
 
-## Rodar localmente (Vercel CLI)
+| Usuário | Senha | Cargo |
+|---------|-------|-------|
+| `admin@vertice.local` | `Vertice@2026` | Administrador |
+| `financeiro@vertice.local` | `Vertice@2026` | Financeiro |
+| `recepcao@vertice.local` | `Vertice@2026` | Recepção |
+| `professor@vertice.local` | `Vertice@2026` | Professor |
 
-```bash
-npm i -g vercel
-vercel dev
-```
+Para recriar o banco demo: `php database/seed.php` (o script limpa e reinsere os dados)
 
-A CLI sobe o front e a função `/api/chat`.
+## Módulos do painel
 
-## Funcionalidades do chat
+Dashboard, alunos, planos/assinaturas, financeiro (faturas, baixas, despesas), check-in, agenda, professores, estoque, comissões, relatórios CSV/PDF-print, unidades e usuários (RBAC).
 
-1. Pergunta o nome  
-2. Menu: planos, serviços, agendamento, horários, cadastro  
-3. Como chegar (Google Maps)  
-4. Falar com atendente (WhatsApp)  
-5. Cadastro de aluno (nome + telefone)
-
-## Variáveis de ambiente
+## Variáveis de ambiente (landing)
 
 Copie `.env.example` → `.env` (local) ou configure na Vercel:
 
@@ -78,20 +75,8 @@ Copie `.env.example` → `.env` (local) ou configure na Vercel:
 
 ## Publicar
 
-Guia completo: **[docs/DEPLOY.md](docs/DEPLOY.md)**
-
-Resumo rápido:
-
-```bash
-# 1) GitHub
-git init
-git add .
-git commit -m "feat: landing Vértice Fitness com concierge WhatsApp"
-gh repo create vertice-fitness-whatsapp --public --source=. --remote=origin --push
-
-# 2) Vercel (site + Import do repositório)
-# Framework Preset: Other | Build: (vazio) | Output: .
-```
+- **Landing:** [docs/DEPLOY.md](docs/DEPLOY.md) (GitHub + Vercel)
+- **Admin:** hosting PHP apontando a raiz do projeto (Apache/Nginx/`php -S`). O SQLite fica em `data/vertice.db` — garanta permissão de escrita em `data/` e `data/uploads/`.
 
 ## Licença
 
