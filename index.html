@@ -145,13 +145,13 @@
       </div>
 
       <div class="login-sheet__hint" id="php-auth-hint" hidden>
-        O login fala com <strong>api/auth.php</strong> (PHP + SQLite).
-        Suba o backend: <strong>php -S 0.0.0.0:8080 router.php</strong>
-        e abra <a href="http://127.0.0.1:8080/" style="color:var(--gold-hi)">http://127.0.0.1:8080/</a>.
+        O login fala com o backend <strong>Node.js</strong> (<code>/api/auth</code>).
+        Suba com <strong>npm run seed && npm run dev</strong>
+        e abra <a href="http://127.0.0.1:3100/" style="color:var(--gold-hi)">http://127.0.0.1:3100/</a>.
         Teste: <strong>teste@vertice.local</strong> / <strong>Teste@2026</strong>
       </div>
 
-      <form method="post" action="api/auth.php" class="login-sheet__form is-active" id="form-login" data-auth-panel="login" autocomplete="on">
+      <form method="post" action="/api/auth" class="login-sheet__form is-active" id="form-login" data-auth-panel="login" autocomplete="on">
         <input type="hidden" name="action" value="login" />
         <label>
           E-mail
@@ -168,7 +168,7 @@
         </p>
       </form>
 
-      <form method="post" action="api/auth.php" class="login-sheet__form" id="form-register" data-auth-panel="register" autocomplete="on">
+      <form method="post" action="/api/auth" class="login-sheet__form" id="form-register" data-auth-panel="register" autocomplete="on">
         <input type="hidden" name="action" value="register" />
         <label>
           Nome completo

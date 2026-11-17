@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestão · Vértice Fitness</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin/admin.css" />
+  <link rel="icon" href="/assets/logo-icon.png" type="image/png" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="/">
+        <img src="/assets/logo-icon.png" alt="" width="28" height="28" />
+        <span>Vértice</span>
+      </a>
+      <nav class="nav" id="nav">
+        <button type="button" data-page="dashboard" class="is-active">Dashboard</button>
+        <button type="button" data-page="members">Alunos</button>
+        <button type="button" data-page="plans">Planos</button>
+        <button type="button" data-page="checkin">Check-in</button>
+        <button type="button" data-page="schedule">Agenda</button>
+        <button type="button" data-page="finance">Financeiro</button>
+        <button type="button" data-page="teachers">Professores</button>
+      </nav>
+      <div class="sidebar__foot">
+        <p id="user-label">—</p>
+        <button type="button" id="logout">Sair</button>
+      </div>
+    </aside>
+    <main class="content">
+      <header class="top">
+        <h1 id="page-title">Dashboard</h1>
+        <a href="/" class="ghost">Ver landing</a>
+      </header>
+      <div id="view" class="view"></div>
+    </main>
+  </div>
+  <script src="/admin/admin.js"></script>
+</body>
+</html>

@@ -2,7 +2,7 @@
   const overlay = document.getElementById("login-panel");
   if (!overlay) return;
 
-  const AUTH_URL = "api/auth.php";
+  const AUTH_URL = "/api/auth";
   const openers = [
     document.getElementById("open-login"),
     document.getElementById("open-login-cta"),
@@ -20,7 +20,7 @@
   const forms = [formLogin, formRegister].filter(Boolean);
 
   let csrf = overlay.querySelector('input[name="_csrf"]')?.value || "";
-  let adminUrl = "/admin/index.php";
+  let adminUrl = "/admin/";
   let backendReady = Boolean(csrf);
   let booting = null;
 
@@ -121,7 +121,7 @@
         backendReady = false;
         showStaticHint(true);
         showFeedback(
-          "Login precisa do PHP local: php -S 0.0.0.0:8080 router.php",
+          "Backend offline. Rode: npm run seed && npm run dev",
           "error"
         );
         return false;
@@ -228,7 +228,7 @@
       window.location.href = data.redirect || adminUrl;
     } catch (err) {
       showFeedback(
-        "Falha ao falar com o PHP. Use: php -S 0.0.0.0:8080 router.php",
+        "Falha ao falar com o Node.js. Use: npm run dev (porta 3100)",
         "error"
       );
       showStaticHint(true);
@@ -256,8 +256,9 @@
 
   if (hint) hint.hidden = true;
 
-  if (overlay.classList.contains("is-open")) {
-    openLogin(overlay.dataset.tab || "login");
+  const params = new URLSearchParams(window.location.search);
+  if (overlay.classList.contains("is-open") || params.has("login")) {
+    openLogin(params.get("tab") || overlay.dataset.tab || "login");
   } else if (csrf) {
     backendReady = true;
   }

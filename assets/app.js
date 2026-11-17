@@ -3,11 +3,8 @@
   const composer = document.getElementById("composer");
   const input = document.getElementById("user-input");
   const statusText = document.getElementById("status-text");
-  // Local PHP: api.php | Vercel: /api/chat (serverless)
-  const onVercel =
-    /\.vercel\.app$|\.vercel\.sh$/i.test(window.location.hostname) ||
-    window.location.search.includes("vercel=1");
-  const API_URL = onVercel ? "/api/chat" : "api.php";
+  // Node.js e Vercel: /api/chat | fallback PHP legado: api.php
+  const API_URL = "/api/chat";
 
   let optionsLocked = false;
   let busy = false;
