@@ -41,14 +41,14 @@ ashiley/
 
 ```bash
 cd ashiley
-php database/seed.php          # cria data/vertice.db e usuário admin
-php -S 127.0.0.1:8080 -t .
+php database/seed.php              # cria data/vertice.db e usuário admin
+php -S 0.0.0.0:8080 router.php     # importante: use o router.php
 ```
 
 Abra:
 
-- http://127.0.0.1:8080/ — landing
-- http://127.0.0.1:8080/admin/login.php — gestão
+- http://127.0.0.1:8080/ — landing (Login + Criar conta)
+- http://127.0.0.1:8080/admin/ — gestão
 
 ### Credenciais seed
 

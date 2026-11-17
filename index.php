@@ -1,92 +1,114 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/admin/includes/bootstrap.php';
-
 $authError = '';
 $authSuccess = '';
 $authTab = ($_GET['tab'] ?? 'login') === 'register' ? 'register' : 'login';
 $openLogin = isset($_GET['login']) || isset($_GET['tab']);
 $units = [];
+$bootOk = false;
+$loggedUser = null;
 
 try {
+    require_once __DIR__ . '/admin/includes/bootstrap.php';
+    $bootOk = true;
     $units = db()->query('SELECT id, name FROM units WHERE active = 1 ORDER BY name')->fetchAll();
-} catch (Throwable $e) {
-    $units = [];
-}
+    $loggedUser = current_user();
 
-if (current_user()) {
-    if (isset($_GET['admin'])) {
+    if ($loggedUser && isset($_GET['admin'])) {
         redirect(admin_url('index.php'));
     }
-}
 
-if (is_post()) {
-    verify_csrf();
-    $form = (string) ($_POST['form'] ?? '');
+    if (is_post()) {
+        verify_csrf();
+        $form = (string) ($_POST['form'] ?? '');
 
-    if ($form === 'staff_login') {
-        $email = trim((string) ($_POST['email'] ?? ''));
-        $password = (string) ($_POST['password'] ?? '');
-        if (attempt_login($email, $password)) {
-            redirect(admin_url('index.php'));
+        if ($form === 'staff_login') {
+            $email = trim((string) ($_POST['email'] ?? ''));
+            $password = (string) ($_POST['password'] ?? '');
+            if (attempt_login($email, $password)) {
+                redirect(admin_url('index.php'));
+            }
+            $authError = 'E-mail ou senha inválidos.';
+            $authTab = 'login';
+            $openLogin = true;
         }
-        $authError = 'E-mail ou senha inválidos.';
-        $authTab = 'login';
-        $openLogin = true;
-    }
 
-    if ($form === 'staff_register') {
-        $authTab = 'register';
-        $openLogin = true;
-        $name = trim((string) ($_POST['name'] ?? ''));
-        $email = mb_strtolower(trim((string) ($_POST['email'] ?? '')));
-        $password = (string) ($_POST['password'] ?? '');
-        $password2 = (string) ($_POST['password_confirm'] ?? '');
-        $unitId = (int) ($_POST['unit_id'] ?? 0);
+        if ($form === 'staff_register') {
+            $authTab = 'register';
+            $openLogin = true;
+            $name = trim((string) ($_POST['name'] ?? ''));
+            $email = mb_strtolower(trim((string) ($_POST['email'] ?? '')));
+            $password = (string) ($_POST['password'] ?? '');
+            $password2 = (string) ($_POST['password_confirm'] ?? '');
+            $unitId = (int) ($_POST['unit_id'] ?? 0);
 
-        if ($name === '' || $email === '' || $password === '') {
-            $authError = 'Preencha nome, e-mail e senha.';
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $authError = 'Informe um e-mail válido.';
-        } elseif (strlen($password) < 8) {
-            $authError = 'A senha deve ter pelo menos 8 caracteres.';
-        } elseif ($password !== $password2) {
-            $authError = 'As senhas não coincidem.';
-        } else {
-            $exists = db()->prepare('SELECT id FROM users WHERE lower(email) = lower(?) LIMIT 1');
-            $exists->execute([$email]);
-            if ($exists->fetch()) {
-                $authError = 'Já existe uma conta com este e-mail. Faça login.';
-                $authTab = 'login';
+            if ($name === '' || $email === '' || $password === '') {
+                $authError = 'Preencha nome, e-mail e senha.';
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $authError = 'Informe um e-mail válido.';
+            } elseif (strlen($password) < 8) {
+                $authError = 'A senha deve ter pelo menos 8 caracteres.';
+            } elseif ($password !== $password2) {
+                $authError = 'As senhas não coincidem.';
             } else {
-                $role = db()->query("SELECT id FROM roles WHERE slug = 'recepcao' LIMIT 1")->fetch();
-                if (!$role) {
-                    $authError = 'Sistema ainda sem perfis. Execute o seed do banco.';
-                } else {
-                    if ($unitId <= 0 && $units) {
-                        $unitId = (int) $units[0]['id'];
-                    }
-                    db()->prepare(
-                        'INSERT INTO users (unit_id, role_id, name, email, password_hash, active)
-                         VALUES (?, ?, ?, ?, ?, 1)'
-                    )->execute([
-                        $unitId > 0 ? $unitId : null,
-                        (int) $role['id'],
-                        $name,
-                        $email,
-                        password_hash($password, PASSWORD_DEFAULT),
-                    ]);
-                    $newId = (int) db()->lastInsertId();
-                    audit('user.register', 'users', $newId, ['source' => 'landing']);
-                    if (attempt_login($email, $password)) {
-                        redirect(admin_url('index.php'));
-                    }
-                    $authSuccess = 'Conta criada. Faça login para continuar.';
+                $exists = db()->prepare('SELECT id FROM users WHERE lower(email) = lower(?) LIMIT 1');
+                $exists->execute([$email]);
+                if ($exists->fetch()) {
+                    $authError = 'Já existe uma conta com este e-mail. Faça login.';
                     $authTab = 'login';
+                } else {
+                    $role = db()->query("SELECT id FROM roles WHERE slug = 'recepcao' LIMIT 1")->fetch();
+                    if (!$role) {
+                        $authError = 'Sistema ainda sem perfis. Execute: php database/seed.php';
+                    } else {
+                        if ($unitId <= 0 && $units) {
+                            $unitId = (int) $units[0]['id'];
+                        }
+                        db()->prepare(
+                            'INSERT INTO users (unit_id, role_id, name, email, password_hash, active)
+                             VALUES (?, ?, ?, ?, ?, 1)'
+                        )->execute([
+                            $unitId > 0 ? $unitId : null,
+                            (int) $role['id'],
+                            $name,
+                            $email,
+                            password_hash($password, PASSWORD_DEFAULT),
+                        ]);
+                        $newId = (int) db()->lastInsertId();
+                        audit('user.register', 'users', $newId, ['source' => 'landing']);
+                        if (attempt_login($email, $password)) {
+                            redirect(admin_url('index.php'));
+                        }
+                        $authSuccess = 'Conta criada. Faça login para continuar.';
+                        $authTab = 'login';
+                    }
                 }
             }
         }
+    }
+} catch (Throwable $e) {
+    $bootOk = false;
+    $authError = 'Falha ao iniciar autenticação. Rode: php database/seed.php';
+    error_log('Landing boot error: ' . $e->getMessage());
+}
+
+if (!function_exists('e')) {
+    function e(?string $value): string
+    {
+        return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+}
+if (!function_exists('csrf_field')) {
+    function csrf_field(): string
+    {
+        return '';
+    }
+}
+if (!function_exists('admin_url')) {
+    function admin_url(string $path = ''): string
+    {
+        return '/admin/' . ltrim($path, '/');
     }
 }
 ?>
@@ -124,7 +146,7 @@ if (is_post()) {
       <img src="assets/logo-icon.png" alt="" width="28" height="28" />
       <span>Vértice</span>
     </a>
-    <?php if (current_user()): ?>
+    <?php if ($loggedUser): ?>
       <a class="site-bar__login" href="<?= e(admin_url('index.php')) ?>">Abrir painel</a>
     <?php else: ?>
       <button type="button" class="site-bar__login" id="open-login" aria-haspopup="dialog" aria-controls="login-panel">
@@ -155,7 +177,7 @@ if (is_post()) {
       </p>
 
       <div class="brand__actions">
-        <?php if (!current_user()): ?>
+        <?php if (!$loggedUser): ?>
           <button type="button" class="brand__cta" id="open-login-cta" aria-controls="login-panel">
             Acessar área restrita
           </button>

@@ -4,7 +4,7 @@
   "private": true,
   "description": "Landing page Vértice Fitness com concierge WhatsApp (PHP local + API serverless na Vercel)",
   "scripts": {
-    "dev:php": "php -S 127.0.0.1:8080 -t .",
+    "dev:php": "php -S 0.0.0.0:8080 router.php",
     "dev:vercel": "vercel dev",
     "deploy": "vercel --prod"
   },
