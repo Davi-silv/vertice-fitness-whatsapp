@@ -1,73 +1,107 @@
-# Vértice Fitness — Node.js
+# Vértice Fitness — Gestão de Academia e Concierge
 
-Landing VIP + concierge WhatsApp + painel de gestão da academia, em **JavaScript / Node.js** (Express + SQLite).
+<div align="center">
 
-## Seções do sistema
+### Landing page, atendimento conversacional e painel administrativo em JavaScript
 
-| Módulo | O que faz |
-|--------|-----------|
-| Landing + Chat | Concierge (planos, horários, agendamento, cadastro, WhatsApp) |
-| Login / Cadastro | Autenticação via `/api/auth` → sessão → `/admin/` |
-| Dashboard | KPIs: alunos, faturas, receita, check-ins |
-| Alunos | Cadastro, busca e vínculo de plano |
-| Planos | Planos Black/Gold/Platinum e assinaturas |
-| Check-in | Busca e registro de acesso |
-| Agenda | Sessões de aula e reservas |
+[![Node.js](https://img.shields.io/badge/Node.js-24-5FA04E?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white)](https://expressjs.com/)
+[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/pt-BR/docs/Web/JavaScript)
+[![SQLite](https://img.shields.io/badge/Banco-SQLite-003B57?logo=sqlite&logoColor=white)](https://sqlite.org/)
+
+**[Código no GitHub](https://github.com/Davi-silv/vertice-fitness-whatsapp)** · **[Portfólio](https://portifolio-future.vercel.app/)**
+
+</div>
+
+---
+
+## Visão geral
+
+O **Vértice Fitness** reúne uma página de apresentação da academia, um concierge conversacional com integração ao fluxo de WhatsApp e um painel para rotinas administrativas.
+
+O projeto é implementado com **JavaScript, Node.js e Express**, incluindo uma interface web em HTML, CSS e JavaScript e uma API para autenticação, chat e gestão.
+
+## Funcionalidades documentadas
+
+| Módulo | Recursos |
+| --- | --- |
+| Landing page e chat | Apresentação de planos, informações e concierge |
+| Autenticação | Login, cadastro e controle de sessão |
+| Dashboard | Indicadores de alunos, faturas, receitas e check-ins |
+| Alunos | Cadastro, pesquisa e associação a planos |
+| Planos | Modalidades e assinaturas |
+| Check-in | Busca e registro de acessos |
+| Agenda | Aulas, sessões e reservas |
 | Financeiro | Faturas, recebimentos e despesas |
-| Professores | Equipe e comissões |
+| Professores | Cadastro de equipe e acompanhamento de comissões |
 
-## Subir local
+## Tecnologias e arquitetura
+
+- **Backend:** Node.js 24 e Express 4;
+- **Sessões e segurança:** bibliotecas de cookies/sessões e `bcryptjs`;
+- **Armazenamento:** SQLite na implementação documentada;
+- **Frontend:** HTML, CSS e JavaScript;
+- **Integração:** chamadas HTTP do frontend para a API Express.
+
+O cliente `assets/api-client.js` verifica a disponibilidade da API, que oferece endpoints como:
+
+| Endpoint | Finalidade |
+| --- | --- |
+| `GET /api/health` | Verificação da API |
+| `/api/auth` | Operações de autenticação e sessão |
+| `POST /api/chat` | Fluxo de concierge |
+| `/api/admin/*` | Operações de gerenciamento |
+
+A autorização e a persistência devem ser verificadas no ambiente de implantação antes de disponibilizar dados reais.
+
+## Organização do repositório
+
+```text
+api/           # Entrada de API para hospedagem
+assets/        # Recursos e cliente HTTP do frontend
+database/      # Arquivos relacionados aos dados
+docs/          # Documentação adicional
+public/        # Recursos públicos
+scripts/       # Scripts de desenvolvimento
+server/        # Servidor e rotinas de backend
+index.html     # Landing page
+gestao-local.html
+```
+
+## Executar localmente
+
+**Pré-requisitos:** Node.js 24 e npm.
 
 ```bash
-cd ashiley
+git clone https://github.com/Davi-silv/vertice-fitness-whatsapp.git
+cd vertice-fitness-whatsapp
 npm install
 npm run seed
 npm run dev
 ```
 
-Abra: **http://127.0.0.1:3100/**
+Abra **http://127.0.0.1:3100/**.
 
-### Credenciais
+| Comando | Descrição |
+| --- | --- |
+| `npm run seed` | Preparar dados iniciais de desenvolvimento |
+| `npm run dev` | Executar o ambiente local |
+| `npm start` | Iniciar o servidor |
 
-| Usuário | Senha | Cargo |
-|---------|-------|-------|
-| `teste@vertice.local` | `Teste@2026` | Administrador (teste) |
-| `admin@vertice.local` | `Vertice@2026` | Administrador |
+> **Atenção:** use somente dados e credenciais fictícias em ambientes de demonstração. Não use credenciais de teste em produção.
 
-## Stack
+## Implantação e persistência
 
-- Node.js 24 · Express · express-session · better-sqlite3 · bcryptjs
-- Front: HTML/CSS/JS (landing + admin SPA)
-- Sem PHP — stack 100% JavaScript/Node.js
+O README original descreve implantação na Vercel usando Express por `api/index.js`.
 
-## Front ↔ Node.js
+**Limitação importante:** o SQLite em ambientes serverless pode usar armazenamento temporário, como `/tmp`, sem garantia de persistência durável após reinicializações. Para uso real com dados de clientes, é necessário planejar armazenamento persistente e revisar a configuração de sessões.
 
-O front usa `assets/api-client.js`, que:
+## Autoria e contato
 
-1. Testa `/api/health` na origem atual
-2. Se falhar (outra porta), tenta `http://127.0.0.1:3100`
-3. Liga chat (`/api/chat`) e login (`/api/auth`) ao Express
+**Davi Barbosa da Silva** — Desenvolvedor Front-End / Full Stack e fundador da Evolutiva Tech.
 
-Abra sempre pelo Node: **http://127.0.0.1:3100/**  
-(ou `?api=http://127.0.0.1:3100` se o HTML estiver em outra porta)
+[GitHub](https://github.com/Davi-silv) · [Portfólio](https://portifolio-future.vercel.app/) · [LinkedIn](https://www.linkedin.com/in/davi-barbosa-silva/)
 
-## API principal
+---
 
-- `GET /api/health` — status do backend
-- `GET/POST /api/auth` — sessão, login, registro, logout
-- `POST /api/chat` — concierge WhatsApp
-- `GET/POST /api/admin/*` — dashboard, alunos, planos, check-in, agenda, financeiro, professores
-
-## Vercel
-
-O app **completo** (landing + login + admin + chat) roda na Vercel via Express (`api/index.js` + `node:sqlite`).
-
-```bash
-vercel --prod
-```
-
-Site: https://ashiley.vercel.app  
-
-Login teste: `teste@vertice.local` / `Teste@2026`
-
-> Na Vercel o SQLite fica em `/tmp` (pode reiniciar em cold start). Para dados persistentes em produção, use um banco externo depois.
+<sub>Projeto de desenvolvimento web para apresentação técnica. Verifique a configuração do ambiente antes do uso em produção.</sub>
